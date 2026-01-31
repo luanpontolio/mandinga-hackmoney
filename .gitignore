@@ -1,0 +1,15 @@
+.env
+.env.*
+.DS_Store
+.idea/
+.vscode/
+node_modules/
+dist/
+build/
+coverage/
+*.log
+backend/out/
+backend/cache/
+frontend/.next/
+specs/**
+.specify/**
