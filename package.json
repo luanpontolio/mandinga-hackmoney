@@ -1,0 +1,20 @@
+{
+  "name": "mandinga-monorepo",
+  "private": true,
+  "packageManager": "bun@1.1.31",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun --filter './apps/*' run dev",
+    "build": "bun --filter './apps/*' run build",
+    "lint": "bun --filter './apps/*' run lint",
+    "test": "bun --filter './apps/*' run test",
+    "build:frontend": "bun --filter './apps/frontend' run build",
+    "dev:frontend": "bun --filter './apps/frontend' run dev",
+    "build:gateway": "bun --filter './apps/gateway' run build",
+    "dev:gateway": "bun --filter './apps/gateway' run dev",
+    "test:contracts": "cd contracts && forge test"
+  }
+}
