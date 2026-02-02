@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract CircleVault is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract CircleVault is Ownable {
     enum CircleStatus {
         ACTIVE,
         FROZEN,
@@ -19,31 +17,38 @@ contract CircleVault is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     uint256 public targetValue;
     uint256 public totalInstallments;
-    uint256 public deadline;
+    uint256 public numberOfRounds;
+    uint256 public startTime;
+    uint256 public timePerRound;
+    uint256 public numUsers;
     uint16 public exitFeeBps;
     CircleStatus public status;
 
-    function initialize(
+    constructor(
         string memory name_,
         uint256 targetValue_,
         uint256 totalInstallments_,
-        uint256 deadline_,
+        uint256 startTime_,
+        uint256 timePerRound_,
+        uint256 numRounds_,
+        uint256 numUsers_,
         uint16 exitFeeBps_,
         address shareToken_,
         address positionNft_,
-        address creator_
-    ) external initializer {
-        __Ownable_init(creator_);
+        address owner_
+    ) Ownable(owner_) {
+
         circleName = name_;
         targetValue = targetValue_;
         totalInstallments = totalInstallments_;
-        deadline = deadline_;
+        startTime = startTime_;
+        timePerRound = timePerRound_;
+        numberOfRounds = numRounds_;
+        numUsers = numUsers_;
         exitFeeBps = exitFeeBps_;
         shareToken = shareToken_;
         positionNft = positionNft_;
-        creator = creator_;
+        creator = owner_;
         status = CircleStatus.ACTIVE;
     }
-
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }

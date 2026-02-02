@@ -3,13 +3,7 @@ pragma solidity ^0.8.20;
 
 /// @notice Minimal EIP-3668 Offchain Resolver for MVP flows.
 contract OffchainResolver {
-    error OffchainLookup(
-        address sender,
-        string[] urls,
-        bytes callData,
-        bytes4 callbackFunction,
-        bytes extraData
-    );
+    error OffchainLookup(address sender, string[] urls, bytes callData, bytes4 callbackFunction, bytes extraData);
 
     string public gatewayUrl;
     address public signer;
@@ -31,24 +25,11 @@ contract OffchainResolver {
         string[] memory urls = new string[](1);
         urls[0] = gatewayUrl;
         bytes memory callData = abi.encode(name, data);
-        revert OffchainLookup(
-            address(this),
-            urls,
-            callData,
-            this.resolveWithProof.selector,
-            callData
-        );
+        revert OffchainLookup(address(this), urls, callData, this.resolveWithProof.selector, callData);
     }
 
-    function resolveWithProof(bytes calldata response, bytes calldata extraData)
-        external
-        view
-        returns (bytes memory)
-    {
-        (bytes memory result, uint64 expires, bytes memory sig) = abi.decode(
-            response,
-            (bytes, uint64, bytes)
-        );
+    function resolveWithProof(bytes calldata response, bytes calldata extraData) external view returns (bytes memory) {
+        (bytes memory result, uint64 expires, bytes memory sig) = abi.decode(response, (bytes, uint64, bytes));
         require(expires >= block.timestamp, "response expired");
 
         bytes32 digest = _toEthSignedMessageHash(keccak256(abi.encode(result, expires, extraData)));

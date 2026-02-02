@@ -1,22 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ShareToken is ERC20Upgradeable, OwnableUpgradeable {
-    constructor(string memory name_, string memory symbol_, address owner_) {
-        __ERC20_init(name_, symbol_);
-        __Ownable_init(owner_);
-
-        _transferOwnership(owner_);
+contract ShareToken is ERC20, Ownable {
+    constructor(
+        string memory name_,
+        string memory symbol_,
+        address owner_
+    ) ERC20(name_, symbol_) Ownable(owner_) {
     }
 
     function mint(address to, uint256 amount) external onlyOwner {
-        require(amount > 0, "ShareToken: Amount must be greater than 0");
-        require(to != address(0), "ShareToken: To address cannot be 0");
-        require(totalSupply() + amount <= type(uint256).max, "ShareToken: Total supply would exceed max");
-
+        require(amount > 0, "amount=0");
         _mint(to, amount);
     }
 

@@ -7,9 +7,14 @@ node_modules/
 dist/
 build/
 coverage/
+contracts/build/
+contracts/cache/
+contracts/out/
 *.log
 backend/out/
 backend/cache/
 frontend/.next/
 specs/**
 .specify/**
+*.tsbuildinfo
+npm-debug.log*

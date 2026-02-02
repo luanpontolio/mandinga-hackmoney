@@ -4,22 +4,39 @@ pragma solidity ^0.8.20;
 import "forge-std/Script.sol";
 import "../src/CircleVaultFactory.sol";
 
-contract CreateCircle is Script {
+contract CreateCircleScript is Script {
+    CircleVaultFactory private factory;
+
     function run() external {
-        uint256 deployerKey = vm.envUint("PRIVATE_KEY");
-        address factoryAddress = vm.envAddress("FACTORY_ADDRESS");
+        uint256 pk = vm.envUint("PRIVATE_KEY");
 
-        vm.startBroadcast(deployerKey);
+        // 🔧 Circle params
+        string memory name = "devcon";
+        uint256 targetValue = 10 ether;
+        uint256 totalInstallments = 10;
+        uint256 startTime = block.timestamp + 1 hours;
+        uint256 timePerRound = 60 minutes;
+        uint256 numRounds = 10;
+        uint256 numUsers = 10;
+        uint16 exitFeeBps = 300; // 3%
 
-        CircleVaultFactory factory = CircleVaultFactory(factoryAddress);
-        factory.createCircle(
-            "devcon",
-            1_000e6,
-            10,
-            block.timestamp + 30 days,
-            100
+        vm.startBroadcast(pk);
+
+        factory = new CircleVaultFactory();
+        address vault = factory.createCircle(
+            name,
+            targetValue,
+            totalInstallments,
+            startTime,
+            timePerRound,
+            numRounds,
+            numUsers,
+            exitFeeBps
         );
 
         vm.stopBroadcast();
+
+        console.log("Circle created");
+        console.log("Vault:", vault);
     }
 }
