@@ -1,7 +1,13 @@
 # 🤞 Mandinga Protocol  
 **Protocol for Group-Based, Interest-Free Credit**
 
-Mandinga is a protocol for organizing installment-based financing around concrete goals such as housing, education, devices, businesses, and life events.
+Mandinga is a protocol for organizing installment-based financing around concrete goals such as:
+
+- Housing  
+- Education  
+- Devices  
+- Businesses  
+- Life events  
 
 It allows groups to coordinate access to large payouts through predictable schedules, transparent rules, and onchain execution.
 
@@ -202,11 +208,11 @@ Records:
 ### 2. Enrollment
 - Deposit  
 - Mint NFT  
-- Issue claims  
+- Mint ERC20 Claims
 
 ### 3. Contribution
 - Monthly payments  
-- Mint exposure  
+- Mint more ERC20 Claims
 - Update records  
 
 ### 4. Operation
@@ -218,7 +224,7 @@ Records:
 - Snapshot  
 
 ### 6. Settlement
-- Burn claims  
+- Burn ERC20 Claims
 - Redeem  
 
 ### 7. Execution
