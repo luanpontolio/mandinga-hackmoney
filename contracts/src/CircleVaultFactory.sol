@@ -16,6 +16,7 @@ contract CircleVaultFactory {
 
     CircleInfo[] public circles;
 
+    /// circleId => vault
     mapping(bytes32 => address) public circleById;
 
     event CircleCreated(
@@ -25,7 +26,11 @@ contract CircleVaultFactory {
         string name
     );
 
-    error CircleAlreadyExists(bytes32 circleId, address existingVault);
+    error CircleAlreadyExists();
+
+    /*───────────────────────────*
+     *         CREATE CIRCLE      *
+     *───────────────────────────*/
 
     function createCircle(
         string memory name_,
@@ -55,25 +60,23 @@ contract CircleVaultFactory {
 
         address existing = circleById[circleId];
         if (existing != address(0)) {
-            revert CircleAlreadyExists(circleId, existing);
+            revert CircleAlreadyExists();
         }
 
-        bytes32 salt = _circleSalt(circleId);
-
-        ShareToken shareToken = new ShareToken(
+        ShareToken shareToken = new ShareToken{salt: _shareSalt(circleId)}(
             string.concat("Mandinga Share ", name_),
             string.concat("MS", name_),
             address(this)
         );
 
-        PositionNFT positionNft = new PositionNFT(
+        PositionNFT positionNft = new PositionNFT{salt: _positionSalt(circleId)}(
             string.concat("Mandinga Position ", name_),
             string.concat("MP", name_),
             address(this)
         );
 
         vault = address(
-            new CircleVault{salt: salt}(
+            new CircleVault{salt: _circleSalt(circleId)}(
                 name_,
                 targetValue,
                 totalInstallments,
@@ -88,11 +91,9 @@ contract CircleVaultFactory {
             )
         );
 
-        // ownership handoff
         shareToken.transferOwnership(vault);
         positionNft.transferOwnership(vault);
 
-        // registry write (AFTER successful deployment)
         circleById[circleId] = vault;
 
         circles.push(
@@ -112,9 +113,41 @@ contract CircleVaultFactory {
      *        VIEW HELPERS        *
      *───────────────────────────*/
 
+    function computeCircleId(
+        address creator,
+        string memory name_,
+        uint256 startTime,
+        uint256 targetValue,
+        uint256 totalInstallments,
+        uint256 timePerRound,
+        uint256 numRounds,
+        uint256 numUsers,
+        uint16 exitFeeBps
+    ) external view returns (bytes32) {
+        return _circleId(
+            creator,
+            name_,
+            startTime,
+            targetValue,
+            totalInstallments,
+            timePerRound,
+            numRounds,
+            numUsers,
+            exitFeeBps
+        );
+    }
+
     function getCirclesCount() external view returns (uint256) {
         return circles.length;
     }
+
+    function getCircle(uint256 index) external view returns (CircleInfo memory) {
+        return circles[index];
+    }
+
+    /*───────────────────────────*
+     *     ADDRESS PREDICTION     *
+     *───────────────────────────*/
 
     function predictVaultAddress(
         bytes32 circleId,
@@ -125,20 +158,46 @@ contract CircleVaultFactory {
             vaultConstructorArgs
         );
 
-        predicted = address(
-            uint160(
-                uint256(
-                    keccak256(
-                        abi.encodePacked(
-                            bytes1(0xff),
-                            address(this),
-                            _circleSalt(circleId),
-                            keccak256(bytecode)
-                        )
-                    )
-                )
-            )
+        predicted = _predictCreate2Address(
+            _circleSalt(circleId),
+            bytecode
         );
+
+        return predicted;
+    }
+
+    function predictShareTokenAddress(
+        bytes32 circleId,
+        bytes memory constructorArgs
+    ) external view returns (address predicted) {
+        bytes memory bytecode = abi.encodePacked(
+            type(ShareToken).creationCode,
+            constructorArgs
+        );
+
+        predicted = _predictCreate2Address(
+            _shareSalt(circleId),
+            bytecode
+        );
+
+        return predicted;
+    }
+
+    function predictPositionNFTAddress(
+        bytes32 circleId,
+        bytes memory constructorArgs
+    ) external view returns (address predicted) {
+        bytes memory bytecode = abi.encodePacked(
+            type(PositionNFT).creationCode,
+            constructorArgs
+        );
+
+        predicted = _predictCreate2Address(
+            _positionSalt(circleId),
+            bytecode
+        );
+
+        return predicted;
     }
 
     /*───────────────────────────*
@@ -172,12 +231,35 @@ contract CircleVaultFactory {
         );
     }
 
-    function _circleSalt(bytes32 circleId)
-        internal
-        pure
-        returns (bytes32)
-    {
-        // reuse canonical id as CREATE2 salt
+    function _circleSalt(bytes32 circleId) internal pure returns (bytes32) {
         return circleId;
+    }
+
+    function _shareSalt(bytes32 circleId) internal pure returns (bytes32) {
+        return keccak256(abi.encode(circleId, "SHARE"));
+    }
+
+    function _positionSalt(bytes32 circleId) internal pure returns (bytes32) {
+        return keccak256(abi.encode(circleId, "POSITION"));
+    }
+
+    function _predictCreate2Address(
+        bytes32 salt,
+        bytes memory bytecode
+    ) internal view returns (address predicted) {
+        predicted = address(
+            uint160(
+                uint256(
+                    keccak256(
+                        abi.encodePacked(
+                            bytes1(0xff),
+                            address(this),
+                            salt,
+                            keccak256(bytecode)
+                        )
+                    )
+                )
+            )
+        );
     }
 }
