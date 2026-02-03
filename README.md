@@ -26,12 +26,13 @@ Mandinga implements group-based credit coordination onchain.
 It enables:
 
 - Fixed monthly installments  
-- Scheduled payouts  
 - Verifiable selection  
 - Deterministic settlement  
 - Public accounting  
 
-Each participant joins a circle, selects a payout window, and follows a predefined contribution plan.
+Each participant joins a circle and follows a predefined contribution plan.
+
+Participants may also express a preferred payout period, used to improve future coordination.
 
 ---
 
@@ -39,7 +40,7 @@ Each participant joins a circle, selects a payout window, and follows a predefin
 
 - Smart Contracts: `/contracts`
 - VRF Consumer: `/contracts/RandomnessConsumer.sol`
-- ENS Registry: `/contracts/ENSRegistry.sol`
+- ENS Resolver: `/contracts/OffchainResolver.sol`
 - Tests: `/test`
 - Frontend: `/frontend`
 - Demo: [link]
@@ -54,9 +55,9 @@ Millions of people rely on installment-based financing to access housing, educat
 These systems work because:
 
 - Contributions are predictable  
-- Payouts are coordinated  
 - Risk is shared  
 - Commitment is collective  
+- Rules are consistent over time  
 
 Mandinga encodes this logic in public, open, and verifiable software.
 
@@ -69,17 +70,14 @@ It transforms social coordination into programmable rules.
 Instead of relying on informal agreements or institutional operators, the protocol encodes:
 
 - Contribution schedules  
-- Payout timing  
 - Quota positions  
-- Default handling  
-- Exit and buyback rules  
-- Settlement logic  
+- Exposure tracking
 
 All rules are executed by smart contracts.
 
 Social coordination becomes programmable coordination.
 
-Participants interact with a system that enforces these rules transparently. 
+Participants interact with a system that enforces these rules transparently.
 
 ---
 
@@ -92,9 +90,9 @@ Mandinga standardizes participation into a simple flow.
 “How much do you want to receive?”
 
 Example:
-- $20,000
-- $50,000
-- $500,000
+- $20,000  
+- $50,000  
+- $500,000  
 
 ---
 
@@ -109,22 +107,19 @@ Examples:
 
 ---
 
-### 3. Select Payout Window
+### 3. Select Payout Month (Preference)
 
-“When do you want to receive?”
+“When would you prefer to receive?”
 
-Choose a quota window:
+Choose a preference window:
 
 - Early  
 - Middle  
 - Late  
 
-Each window represents a phase of the circle lifecycle.
+This represents a preference, not a guarantee.
 
-Payouts are distributed using verifiable randomness among eligible participants within each phase.
-
-Earlier windows prioritize early access.  
-Later windows prioritize lower cost and stability.
+It is used to improve future coordination and product design.
 
 ---
 
@@ -132,15 +127,14 @@ Later windows prioritize lower cost and stability.
 
 - Deposit first installment  
 - Mint position NFT  
-- Activate quota window  
+- Activate quota  
 
 ---
 
 ### 5. Operate
 
-- Pay monthly before deadline  
-- Track payment status  
-- Remain eligible for payouts  
+- Pay monthly  
+- Track status  
 - Sell to Vault (buyback)  
 
 ---
@@ -150,48 +144,6 @@ Later windows prioritize lower cost and stability.
 - Burn claims  
 - Redeem USDC  
 - Close position  
-
----
-
-## 📅 Monthly Rounds
-
-Each circle operates in deterministic monthly rounds.
-
-At every round:
-
-- Installments are collected  
-- Late payments are flagged  
-- Eligible positions are computed  
-- Chainlink VRF selects recipients  
-- Payouts are executed  
-- States are updated  
-
-Only participants who are up to date remain eligible.
-
-This replaces manual meetings with onchain execution.
-
----
-
-## 🔄 Payout Window Mechanism
-
-Mandinga implements payout predictability using time-based windows.
-
-Each circle duration is divided into three phases:
-
-- Phase 1: Early  
-- Phase 2: Middle  
-- Phase 3: Late  
-
-At each phase:
-
-- Only participants assigned to that window are eligible  
-- Chainlink VRF selects a recipient  
-- The winner receives the payout  
-- The position is marked as settled  
-
-This creates predictability without fixing exact payout months.
-
-Participants know when they will receive within a range, while preserving fairness and verifiability.
 
 ---
 
@@ -288,7 +240,7 @@ Records:
 
 Mandinga uses burn-on-redeem settlement.
 
-Flow:  
+Flow:
 redeem → burn → transfer
 
 Rules:
@@ -298,20 +250,6 @@ Rules:
 - Burn removes liability  
 
 This ensures solvency.
-
----
-
-## ⚠️ Default & Exit Handling
-
-If a participant misses multiple installments:
-
-- The position becomes delinquent  
-- Payout eligibility is suspended  
-- Buyback is enforced with penalty  
-
-Funds already contributed remain in the system.
-
-This protects the collective pool.
 
 ---
 
@@ -448,9 +386,9 @@ Each draw is:
 ## 🚧 Roadmap
 
 - Advanced quota markets  
-- Dynamic payout window weighting  
 - Credit scoring  
-- Cross-chain circles  
+- Payout preference aggregation  
+- Cross-circle liquidity coordination  
 - Privacy layers  
 - Agent automation  
 - Institutional rails  
@@ -474,3 +412,5 @@ MIT
 Mandinga is a protocol for predictable, collective access to credit.
 
 It bridges group coordination and programmable finance.
+
+It enables people to organize capital around time, trust, and shared commitment.
