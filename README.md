@@ -107,7 +107,7 @@ Examples:
 
 ---
 
-### 3. Select Payout Month (Preference)
+### 3. Select Payout Window (Preference)
 
 “When would you prefer to receive?”
 
@@ -274,7 +274,7 @@ To ensure fast circle activation:
 
 Unfilled quotas may be temporarily backed by protocol liquidity.
 
-### Order Incentives
+### Window Incentives (soon)
 
 Late quotas may receive:
 
@@ -282,7 +282,7 @@ Late quotas may receive:
 - Cashback  
 - Reduced installments  
 
-### Cashback
+### Cashback (soon)
 
 Rewards may be applied to:
 
@@ -385,6 +385,7 @@ Each draw is:
 
 ## 🚧 Roadmap
 
+- Incentives
 - Advanced quota markets  
 - Credit scoring  
 - Payout preference aggregation  
