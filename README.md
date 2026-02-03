@@ -31,7 +31,7 @@ It enables:
 - Deterministic settlement  
 - Public accounting  
 
-Each participant joins a circle, selects a payout month, and follows a predefined contribution plan.
+Each participant joins a circle, selects a payout window, and follows a predefined contribution plan.
 
 ---
 
@@ -109,17 +109,22 @@ Examples:
 
 ---
 
-### 3. Select Payout Month
+### 3. Select Payout Window
 
 “When do you want to receive?”
 
-Choose a quota:
+Choose a quota window:
 
 - Early  
 - Middle  
 - Late  
 
-Each quota has different cost and incentives.
+Each window represents a phase of the circle lifecycle.
+
+Payouts are distributed using verifiable randomness among eligible participants within each phase.
+
+Earlier windows prioritize early access.  
+Later windows prioritize lower cost and stability.
 
 ---
 
@@ -127,15 +132,16 @@ Each quota has different cost and incentives.
 
 - Deposit first installment  
 - Mint position NFT  
-- Activate quota  
+- Activate quota window  
 
 ---
 
 ### 5. Operate
 
-- Pay monthly  
-- Track status  
-- Sell to Vault (buyback) 
+- Pay monthly before deadline  
+- Track payment status  
+- Remain eligible for payouts  
+- Sell to Vault (buyback)  
 
 ---
 
@@ -144,6 +150,48 @@ Each quota has different cost and incentives.
 - Burn claims  
 - Redeem USDC  
 - Close position  
+
+---
+
+## 📅 Monthly Rounds
+
+Each circle operates in deterministic monthly rounds.
+
+At every round:
+
+- Installments are collected  
+- Late payments are flagged  
+- Eligible positions are computed  
+- Chainlink VRF selects recipients  
+- Payouts are executed  
+- States are updated  
+
+Only participants who are up to date remain eligible.
+
+This replaces manual meetings with onchain execution.
+
+---
+
+## 🔄 Payout Window Mechanism
+
+Mandinga implements payout predictability using time-based windows.
+
+Each circle duration is divided into three phases:
+
+- Phase 1: Early  
+- Phase 2: Middle  
+- Phase 3: Late  
+
+At each phase:
+
+- Only participants assigned to that window are eligible  
+- Chainlink VRF selects a recipient  
+- The winner receives the payout  
+- The position is marked as settled  
+
+This creates predictability without fixing exact payout months.
+
+Participants know when they will receive within a range, while preserving fairness and verifiability.
 
 ---
 
@@ -208,11 +256,11 @@ Records:
 ### 2. Enrollment
 - Deposit  
 - Mint NFT  
-- Mint ERC20 Claims
+- Mint ERC20 Claims  
 
 ### 3. Contribution
 - Monthly payments  
-- Mint more ERC20 Claims
+- Mint more ERC20 Claims  
 - Update records  
 
 ### 4. Operation
@@ -224,7 +272,7 @@ Records:
 - Snapshot  
 
 ### 6. Settlement
-- Burn ERC20 Claims
+- Burn ERC20 Claims  
 - Redeem  
 
 ### 7. Execution
@@ -240,7 +288,7 @@ Records:
 
 Mandinga uses burn-on-redeem settlement.
 
-Flow:
+Flow:  
 redeem → burn → transfer
 
 Rules:
@@ -250,6 +298,20 @@ Rules:
 - Burn removes liability  
 
 This ensures solvency.
+
+---
+
+## ⚠️ Default & Exit Handling
+
+If a participant misses multiple installments:
+
+- The position becomes delinquent  
+- Payout eligibility is suspended  
+- Buyback is enforced with penalty  
+
+Funds already contributed remain in the system.
+
+This protects the collective pool.
 
 ---
 
@@ -386,6 +448,7 @@ Each draw is:
 ## 🚧 Roadmap
 
 - Advanced quota markets  
+- Dynamic payout window weighting  
 - Credit scoring  
 - Cross-chain circles  
 - Privacy layers  
@@ -409,4 +472,5 @@ MIT
 ## 🌱 Vision
 
 Mandinga is a protocol for predictable, collective access to credit.
+
 It bridges group coordination and programmable finance.
