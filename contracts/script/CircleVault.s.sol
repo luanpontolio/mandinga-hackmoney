@@ -8,12 +8,13 @@ contract CircleVaultScript is Script {
     function runDeposit() external {
         uint256 pk = vm.envUint("ACCOUNT_PRIVATE_KEY");
         address vaultAddress = vm.envAddress("CIRCLE_VAULT_ADDRESS");
+        uint256 quotaId = vm.envOr("QUOTA_ID", uint256(0)); // 0=early, 1=middle, 2=late
 
-        CircleVault vault = CircleVault(vaultAddress);
+        CircleVault vault = CircleVault(payable(vaultAddress));
         uint256 amount = vault.targetValue();
 
         vm.startBroadcast(pk);
-        vault.deposit{value: amount}();
+        vault.deposit{value: amount}(quotaId);
         vm.stopBroadcast();
     }
 
@@ -21,7 +22,7 @@ contract CircleVaultScript is Script {
         uint256 pk = vm.envUint("PRIVATE_KEY");
         address vaultAddress = vm.envAddress("CIRCLE_VAULT_ADDRESS");
 
-        CircleVault vault = CircleVault(vaultAddress);
+        CircleVault vault = CircleVault(payable(vaultAddress));
         uint256 amount = vault.installmentAmount();
 
         vm.startBroadcast(pk);

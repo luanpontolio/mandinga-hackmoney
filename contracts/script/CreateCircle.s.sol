@@ -10,7 +10,7 @@ contract CreateCircleScript is Script {
     function run() external {
         uint256 pk = vm.envUint("PRIVATE_KEY");
 
-        // 🔧 Circle params
+        // 🔧 Circle params (native token = USDC 18 decimals on Arc testnet)
         string memory name = "devcon";
         uint256 targetValue = 10 ether;
         uint256 totalInstallments = 10;
@@ -19,6 +19,9 @@ contract CreateCircleScript is Script {
         uint256 numRounds = 10;
         uint256 numUsers = 10;
         uint16 exitFeeBps = 300; // 3%
+        uint256 quotaCapEarly = 4;
+        uint256 quotaCapMiddle = 3;
+        uint256 quotaCapLate = 3;
 
         vm.startBroadcast(pk);
 
@@ -31,7 +34,10 @@ contract CreateCircleScript is Script {
             timePerRound,
             numRounds,
             numUsers,
-            exitFeeBps
+            exitFeeBps,
+            quotaCapEarly,
+            quotaCapMiddle,
+            quotaCapLate
         );
 
         vm.stopBroadcast();
