@@ -266,7 +266,7 @@ No hidden yield.
 
 ---
 
-## 🎁 Incentives & Seeding
+## 🎁 Seeding & Incentives (soon)
 
 To ensure fast circle activation:
 
