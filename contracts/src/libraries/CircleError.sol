@@ -11,9 +11,12 @@ library CircleErrors {
     error AlreadyEnrolled();
     error IncorrectDepositAmount();
     error IncorrectInstallmentAmount();
+    error CircleFull();
     error CircleFrozen();
     error CircleNotFrozen();
     error CircleNotActive();
+    error PositionNotActive();
+    error PositionFullyPaid();
     error InsufficientClaims();
     error InsufficientBalance();
     error AlreadySnapshotted();

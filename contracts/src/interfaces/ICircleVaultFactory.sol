@@ -29,7 +29,7 @@ interface ICircleVaultFactory {
         bytes memory vaultConstructorArgs
     ) external view returns (address predicted);
 
-    function predictShareTokenAddress(
+    function predictERC20ClaimAddress(
         bytes32 circleId,
         bytes memory constructorArgs
     ) external view returns (address predicted);

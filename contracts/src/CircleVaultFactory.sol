@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "./CircleVault.sol";
-import "./ShareToken.sol";
+import "./ERC20Claim.sol";
 import "./PositionNFT.sol";
 
 contract CircleVaultFactory {
@@ -63,7 +63,7 @@ contract CircleVaultFactory {
             revert CircleAlreadyExists();
         }
 
-        ShareToken shareToken = new ShareToken{salt: _shareSalt(circleId)}(
+        ERC20Claim shareToken = new ERC20Claim{salt: _shareSalt(circleId)}(
             string.concat("Mandinga Share ", name_),
             string.concat("MS", name_),
             address(this)
@@ -166,12 +166,12 @@ contract CircleVaultFactory {
         return predicted;
     }
 
-    function predictShareTokenAddress(
+    function predictERC20ClaimAddress(
         bytes32 circleId,
         bytes memory constructorArgs
     ) external view returns (address predicted) {
         bytes memory bytecode = abi.encodePacked(
-            type(ShareToken).creationCode,
+            type(ERC20Claim).creationCode,
             constructorArgs
         );
 
