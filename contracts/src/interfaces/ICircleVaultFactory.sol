@@ -2,6 +2,14 @@
 pragma solidity ^0.8.20;
 
 interface ICircleVaultFactory {
+    struct CircleInfo {
+        address vault;
+        address shareToken;
+        address positionNft;
+        bytes32 circleId;
+        string name;
+    }
+
     event CircleCreated(address indexed vault, address indexed shareToken, address indexed positionNft, string name);
 
     function createCircle(
@@ -14,6 +22,24 @@ interface ICircleVaultFactory {
         uint256 numUsers,
         uint16 exitFeeBps
     ) external returns (address);
+
+
+    function predictVaultAddress(
+        bytes32 circleId,
+        bytes memory vaultConstructorArgs
+    ) external view returns (address predicted);
+
+    function predictERC20ClaimAddress(
+        bytes32 circleId,
+        bytes memory constructorArgs
+    ) external view returns (address predicted);
+
+    function predictPositionNFTAddress(
+        bytes32 circleId,
+        bytes memory constructorArgs
+    ) external view returns (address predicted);
+
+    function getCircle(uint256 index) external view returns (CircleInfo memory);
 
     function getCirclesCount() external view returns (uint256);
 }

@@ -22,17 +22,23 @@ contract CircleVaultFactoryFuzzTest is Test {
             uint256 timePerRound,
             uint256 numRounds,
             uint256 numUsers,
-            uint16 exitFeeBps
+            uint16 exitFeeBps,
+            uint256 quotaCapEarly,
+            uint256 quotaCapMiddle,
+            uint256 quotaCapLate
         )
     {
         name = "testcircle";
-        targetValue = 5_000e6; // 5,000 USDC
+        targetValue = 5_000e18;
         totalInstallments = 12;
         startTime = block.timestamp + 1 days;
         timePerRound = 7 days;
         numRounds = 10;
         numUsers = 10;
-        exitFeeBps = 200; // 2%
+        exitFeeBps = 200;
+        quotaCapEarly = 4;
+        quotaCapMiddle = 3;
+        quotaCapLate = 3;
     }
 
     function testFuzz_PredictAddressesMatchDeployment() public {
@@ -44,53 +50,23 @@ contract CircleVaultFactoryFuzzTest is Test {
             uint256 timePerRound,
             uint256 numRounds,
             uint256 numUsers,
-            uint16 exitFeeBps
+            uint16 exitFeeBps,
+            uint256 quotaCapEarly,
+            uint256 quotaCapMiddle,
+            uint256 quotaCapLate
         ) = createArgs();
 
         address creator = address(0x1);
 
-        vm.prank(creator);
-
         /*──────────────────*
-         *  COMPUTE ID      *
+         *  PREDICT (same encoding as createCircle) *
          *──────────────────*/
-        bytes32 circleId = factory.computeCircleId(
+        (
+            address predictedVault,
+            address predictedShare,
+            address predictedPosition
+        ) = factory.predictAddresses(
             creator,
-            name,
-            startTime,
-            targetValue,
-            totalInstallments,
-            timePerRound,
-            numRounds,
-            numUsers,
-            exitFeeBps
-        );
-
-        /*──────────────────*
-         *  PREDICT TOKENS  *
-         *──────────────────*/
-        bytes memory shareArgs = abi.encode(
-            string.concat("Mandinga Share ", name),
-            string.concat("MS", name),
-            address(factory)
-        );
-
-        bytes memory positionArgs = abi.encode(
-            string.concat("Mandinga Position ", name),
-            string.concat("MP", name),
-            address(factory)
-        );
-
-        address predictedShare =
-            factory.predictShareTokenAddress(circleId, shareArgs);
-
-        address predictedPosition =
-            factory.predictPositionNFTAddress(circleId, positionArgs);
-
-        /*──────────────────*
-         *  PREDICT VAULT   *
-         *──────────────────*/
-        bytes memory vaultArgs = abi.encode(
             name,
             targetValue,
             totalInstallments,
@@ -99,17 +75,15 @@ contract CircleVaultFactoryFuzzTest is Test {
             numRounds,
             numUsers,
             exitFeeBps,
-            predictedShare,
-            predictedPosition,
-            creator
+            quotaCapEarly,
+            quotaCapMiddle,
+            quotaCapLate
         );
-
-        address predictedVault =
-            factory.predictVaultAddress(circleId, vaultArgs);
 
         /*──────────────────*
          *  DEPLOY          *
          *──────────────────*/
+        vm.prank(creator);
         address deployedVault = factory.createCircle(
             name,
             targetValue,
@@ -118,7 +92,10 @@ contract CircleVaultFactoryFuzzTest is Test {
             timePerRound,
             numRounds,
             numUsers,
-            exitFeeBps
+            exitFeeBps,
+            quotaCapEarly,
+            quotaCapMiddle,
+            quotaCapLate
         );
 
         /*──────────────────*

@@ -8,7 +8,7 @@ interface ICircleVault {
         CLOSED
     }
 
-    function initialize(
+    function createCircle(
         string memory name_,
         uint256 targetValue_,
         uint256 totalInstallments_,
@@ -21,4 +21,7 @@ interface ICircleVault {
         address positionNft_,
         address creator_
     ) external;
+
+    function deposit() external payable;
+    function payInstallment() external payable;
 }

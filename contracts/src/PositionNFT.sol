@@ -41,6 +41,10 @@ contract PositionNFT is ERC721, Ownable {
         return tokenId;
     }
 
+    function getPosition(uint256 tokenId) external view returns (PositionData memory) {
+        return positions[tokenId];
+    }
+
     function updatePaid(
         uint256 tokenId,
         uint256 paidInstallments,
