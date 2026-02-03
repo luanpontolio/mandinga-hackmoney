@@ -19,6 +19,7 @@ library CircleErrors {
     error PositionFullyPaid();
     error InsufficientClaims();
     error InsufficientBalance();
+    error InsufficientSnapshot();
     error AlreadySnapshotted();
     error NotSnapshotted();
     error DrawAlreadyRequested();
@@ -27,4 +28,6 @@ library CircleErrors {
     error TransfersFrozen();
     error ZeroAddress();
     error ZeroAmount();
+    error InvalidQuota();
+    error QuotaFull();
 }

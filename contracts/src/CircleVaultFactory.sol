@@ -40,11 +40,18 @@ contract CircleVaultFactory {
         uint256 timePerRound,
         uint256 numRounds,
         uint256 numUsers,
-        uint16 exitFeeBps
+        uint16 exitFeeBps,
+        uint256 quotaCapEarly,
+        uint256 quotaCapMiddle,
+        uint256 quotaCapLate
     ) external returns (address vault) {
         require(exitFeeBps <= 500, "exit fee too high");
         require(totalInstallments > 0, "installments=0");
         require(numUsers == numRounds, "users != rounds");
+        require(
+            quotaCapEarly + quotaCapMiddle + quotaCapLate == numUsers,
+            "quota caps must sum to numUsers"
+        );
 
         bytes32 circleId = _circleId(
             msg.sender,
@@ -55,7 +62,10 @@ contract CircleVaultFactory {
             timePerRound,
             numRounds,
             numUsers,
-            exitFeeBps
+            exitFeeBps,
+            quotaCapEarly,
+            quotaCapMiddle,
+            quotaCapLate
         );
 
         address existing = circleById[circleId];
@@ -87,7 +97,10 @@ contract CircleVaultFactory {
                 exitFeeBps,
                 address(shareToken),
                 address(positionNft),
-                msg.sender
+                msg.sender,
+                quotaCapEarly,
+                quotaCapMiddle,
+                quotaCapLate
             )
         );
 
@@ -122,7 +135,10 @@ contract CircleVaultFactory {
         uint256 timePerRound,
         uint256 numRounds,
         uint256 numUsers,
-        uint16 exitFeeBps
+        uint16 exitFeeBps,
+        uint256 quotaCapEarly,
+        uint256 quotaCapMiddle,
+        uint256 quotaCapLate
     ) external view returns (bytes32) {
         return _circleId(
             creator,
@@ -133,7 +149,10 @@ contract CircleVaultFactory {
             timePerRound,
             numRounds,
             numUsers,
-            exitFeeBps
+            exitFeeBps,
+            quotaCapEarly,
+            quotaCapMiddle,
+            quotaCapLate
         );
     }
 
@@ -200,6 +219,81 @@ contract CircleVaultFactory {
         return predicted;
     }
 
+    function predictAddresses(
+        address creator,
+        string memory name_,
+        uint256 targetValue,
+        uint256 totalInstallments,
+        uint256 startTime,
+        uint256 timePerRound,
+        uint256 numRounds,
+        uint256 numUsers,
+        uint16 exitFeeBps,
+        uint256 quotaCapEarly,
+        uint256 quotaCapMiddle,
+        uint256 quotaCapLate
+    )
+        external
+        view
+        returns (address predictedVault, address predictedShare, address predictedPosition)
+    {
+        bytes32 circleId = _circleId(
+            creator,
+            name_,
+            startTime,
+            targetValue,
+            totalInstallments,
+            timePerRound,
+            numRounds,
+            numUsers,
+            exitFeeBps,
+            quotaCapEarly,
+            quotaCapMiddle,
+            quotaCapLate
+        );
+
+        bytes memory shareArgs = abi.encode(
+            string.concat("Mandinga Share ", name_),
+            string.concat("MS", name_),
+            address(this)
+        );
+        predictedShare = _predictCreate2Address(
+            _shareSalt(circleId),
+            abi.encodePacked(type(ERC20Claim).creationCode, shareArgs)
+        );
+
+        bytes memory positionArgs = abi.encode(
+            string.concat("Mandinga Position ", name_),
+            string.concat("MP", name_),
+            address(this)
+        );
+        predictedPosition = _predictCreate2Address(
+            _positionSalt(circleId),
+            abi.encodePacked(type(PositionNFT).creationCode, positionArgs)
+        );
+
+        bytes memory vaultArgs = abi.encode(
+            name_,
+            targetValue,
+            totalInstallments,
+            startTime,
+            timePerRound,
+            numRounds,
+            numUsers,
+            exitFeeBps,
+            predictedShare,
+            predictedPosition,
+            creator,
+            quotaCapEarly,
+            quotaCapMiddle,
+            quotaCapLate
+        );
+        predictedVault = _predictCreate2Address(
+            _circleSalt(circleId),
+            abi.encodePacked(type(CircleVault).creationCode, vaultArgs)
+        );
+    }
+
     /*───────────────────────────*
      *      INTERNAL HELPERS      *
      *───────────────────────────*/
@@ -213,7 +307,10 @@ contract CircleVaultFactory {
         uint256 timePerRound,
         uint256 numRounds,
         uint256 numUsers,
-        uint16 exitFeeBps
+        uint16 exitFeeBps,
+        uint256 quotaCapEarly,
+        uint256 quotaCapMiddle,
+        uint256 quotaCapLate
     ) internal view returns (bytes32) {
         return keccak256(
             abi.encode(
@@ -226,6 +323,9 @@ contract CircleVaultFactory {
                 numRounds,
                 numUsers,
                 exitFeeBps,
+                quotaCapEarly,
+                quotaCapMiddle,
+                quotaCapLate,
                 block.chainid
             )
         );
