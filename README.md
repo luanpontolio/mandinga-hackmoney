@@ -26,24 +26,25 @@ Mandinga implements group-based credit coordination onchain.
 It enables:
 
 - Fixed monthly installments  
-- Scheduled payouts  
 - Verifiable selection  
 - Deterministic settlement  
 - Public accounting  
 
-Each participant joins a circle, selects a payout month, and follows a predefined contribution plan.
+Each participant joins a circle and follows a predefined contribution plan.
+
+Participants may also express a preferred payout period, used to improve future coordination.
 
 ---
 
 ## 🔗 Proof of Implementation
 
-- Smart Contracts: `/contracts`
-- VRF Consumer: `/contracts/RandomnessConsumer.sol`
-- ENS Registry: `/contracts/ENSRegistry.sol`
-- Tests: `/test`
-- Frontend: `/frontend`
-- Demo: [link]
-- Deployment: [address]
+- Smart Contracts: `/contracts`  
+- VRF Consumer: `/contracts/RandomnessConsumer.sol`  
+- ENS Resolver: `/contracts/OffchainResolver.sol`  
+- Tests: `/test`  
+- Frontend: `/frontend`  
+- Demo: [link]  
+- Deployment: [address]  
 
 ---
 
@@ -54,9 +55,9 @@ Millions of people rely on installment-based financing to access housing, educat
 These systems work because:
 
 - Contributions are predictable  
-- Payouts are coordinated  
 - Risk is shared  
 - Commitment is collective  
+- Rules are consistent over time  
 
 Mandinga encodes this logic in public, open, and verifiable software.
 
@@ -69,17 +70,14 @@ It transforms social coordination into programmable rules.
 Instead of relying on informal agreements or institutional operators, the protocol encodes:
 
 - Contribution schedules  
-- Payout timing  
 - Quota positions  
-- Default handling  
-- Exit and buyback rules  
-- Settlement logic  
+- Exposure tracking  
 
 All rules are executed by smart contracts.
 
 Social coordination becomes programmable coordination.
 
-Participants interact with a system that enforces these rules transparently. 
+Participants interact with a system that enforces these rules transparently.
 
 ---
 
@@ -92,9 +90,9 @@ Mandinga standardizes participation into a simple flow.
 “How much do you want to receive?”
 
 Example:
-- $20,000
-- $50,000
-- $500,000
+- $20,000  
+- $50,000  
+- $500,000  
 
 ---
 
@@ -109,17 +107,19 @@ Examples:
 
 ---
 
-### 3. Select Payout Month
+### 3. Select Payout Window (Preference)
 
-“When do you want to receive?”
+“When would you prefer to receive?”
 
-Choose a quota:
+Choose a preference window:
 
 - Early  
 - Middle  
 - Late  
 
-Each quota has different cost and incentives.
+This represents a preference, not a guarantee.
+
+It is used to improve future coordination and product design.
 
 ---
 
@@ -135,7 +135,7 @@ Each quota has different cost and incentives.
 
 - Pay monthly  
 - Track status  
-- Sell to Vault (buyback) 
+- Sell to Vault (buyback)  
 
 ---
 
@@ -208,11 +208,11 @@ Records:
 ### 2. Enrollment
 - Deposit  
 - Mint NFT  
-- Mint ERC20 Claims
+- Mint ERC20 Claims  
 
 ### 3. Contribution
 - Monthly payments  
-- Mint more ERC20 Claims
+- Mint more ERC20 Claims  
 - Update records  
 
 ### 4. Operation
@@ -224,7 +224,7 @@ Records:
 - Snapshot  
 
 ### 6. Settlement
-- Burn ERC20 Claims
+- Burn ERC20 Claims  
 - Redeem  
 
 ### 7. Execution
@@ -253,6 +253,39 @@ This ensures solvency.
 
 ---
 
+## ⚠️ Default and Non-Payment Handling
+
+Missed payments are explicitly handled by the protocol.
+
+### Onchain Enforcement
+
+The system tracks:
+
+- Missed installments  
+- Delinquency periods  
+- Default thresholds  
+
+When thresholds are exceeded:
+
+- Claim issuance may be paused  
+- Buyback value may be discounted  
+- Participation rights may be restricted  
+
+### Hybrid Enforcement (Production Deployments)
+
+Mandinga is designed to integrate with:
+
+- Legal agreements  
+- Credit assessment  
+- Institutional operators  
+- Regulatory reporting  
+
+In regulated deployments, default resolution may involve offchain enforcement.
+
+The protocol provides transparent and auditable data for these processes.
+
+---
+
 ## 💰 Economic Model
 
 - Installments purchase access  
@@ -266,7 +299,7 @@ No hidden yield.
 
 ---
 
-## 🎁 Incentives & Seeding
+## 🎁 Seeding & Incentives (soon)
 
 To ensure fast circle activation:
 
@@ -274,7 +307,7 @@ To ensure fast circle activation:
 
 Unfilled quotas may be temporarily backed by protocol liquidity.
 
-### Order Incentives
+### Window Incentives (soon)
 
 Late quotas may receive:
 
@@ -282,7 +315,7 @@ Late quotas may receive:
 - Cashback  
 - Reduced installments  
 
-### Cashback
+### Cashback (soon)
 
 Rewards may be applied to:
 
@@ -309,8 +342,6 @@ Anyone can audit.
 ---
 
 ## 📖 Example Circles
-
----
 
 ### Devcon Travel Circle
 
@@ -385,9 +416,11 @@ Each draw is:
 
 ## 🚧 Roadmap
 
+- Incentives  
 - Advanced quota markets  
 - Credit scoring  
-- Cross-chain circles  
+- Payout preference aggregation  
+- Cross-circle liquidity coordination  
 - Privacy layers  
 - Agent automation  
 - Institutional rails  
@@ -409,4 +442,7 @@ MIT
 ## 🌱 Vision
 
 Mandinga is a protocol for predictable, collective access to credit.
+
 It bridges group coordination and programmable finance.
+
+It enables people to organize capital around time, trust, and shared commitment.
