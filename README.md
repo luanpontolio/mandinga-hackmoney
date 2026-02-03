@@ -38,13 +38,13 @@ Participants may also express a preferred payout period, used to improve future 
 
 ## 🔗 Proof of Implementation
 
-- Smart Contracts: `/contracts`
-- VRF Consumer: `/contracts/RandomnessConsumer.sol`
-- ENS Resolver: `/contracts/OffchainResolver.sol`
-- Tests: `/test`
-- Frontend: `/frontend`
-- Demo: [link]
-- Deployment: [address]
+- Smart Contracts: `/contracts`  
+- VRF Consumer: `/contracts/RandomnessConsumer.sol`  
+- ENS Resolver: `/contracts/OffchainResolver.sol`  
+- Tests: `/test`  
+- Frontend: `/frontend`  
+- Demo: [link]  
+- Deployment: [address]  
 
 ---
 
@@ -71,7 +71,7 @@ Instead of relying on informal agreements or institutional operators, the protoc
 
 - Contribution schedules  
 - Quota positions  
-- Exposure tracking
+- Exposure tracking  
 
 All rules are executed by smart contracts.
 
@@ -253,6 +253,39 @@ This ensures solvency.
 
 ---
 
+## ⚠️ Default and Non-Payment Handling
+
+Missed payments are explicitly handled by the protocol.
+
+### Onchain Enforcement
+
+The system tracks:
+
+- Missed installments  
+- Delinquency periods  
+- Default thresholds  
+
+When thresholds are exceeded:
+
+- Claim issuance may be paused  
+- Buyback value may be discounted  
+- Participation rights may be restricted  
+
+### Hybrid Enforcement (Production Deployments)
+
+Mandinga is designed to integrate with:
+
+- Legal agreements  
+- Credit assessment  
+- Institutional operators  
+- Regulatory reporting  
+
+In regulated deployments, default resolution may involve offchain enforcement.
+
+The protocol provides transparent and auditable data for these processes.
+
+---
+
 ## 💰 Economic Model
 
 - Installments purchase access  
@@ -309,8 +342,6 @@ Anyone can audit.
 ---
 
 ## 📖 Example Circles
-
----
 
 ### Devcon Travel Circle
 
@@ -385,7 +416,7 @@ Each draw is:
 
 ## 🚧 Roadmap
 
-- Incentives
+- Incentives  
 - Advanced quota markets  
 - Credit scoring  
 - Payout preference aggregation  
