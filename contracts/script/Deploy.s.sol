@@ -2,13 +2,14 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
+import "../src/CircleVaultFactory.sol";
 
 contract Deploy is Script {
     function run() external {
-        vm.startBroadcast();
+        uint256 pk = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(pk);
 
-        // TODO: deploy CircleVaultFactory and dependent contracts.
-        // This script will be completed when contracts are implemented.
+        new CircleVaultFactory();
 
         vm.stopBroadcast();
     }

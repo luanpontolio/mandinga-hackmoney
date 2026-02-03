@@ -82,7 +82,7 @@ contract CircleVaultFactoryFuzzTest is Test {
         );
 
         address predictedShare =
-            factory.predictShareTokenAddress(circleId, shareArgs);
+            factory.predictERC20ClaimAddress(circleId, shareArgs);
 
         address predictedPosition =
             factory.predictPositionNFTAddress(circleId, positionArgs);
