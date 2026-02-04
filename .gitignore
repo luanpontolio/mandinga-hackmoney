@@ -3,6 +3,7 @@
 .DS_Store
 .idea/
 .vscode/
+.gitmodules
 node_modules/
 dist/
 build/
@@ -10,6 +11,8 @@ coverage/
 contracts/build/
 contracts/cache/
 contracts/out/
+contracts/lib/
+contracts/broadcasts/
 *.log
 backend/out/
 backend/cache/

@@ -23,11 +23,19 @@ contract CreateCircleScript is Script {
         uint256 quotaCapMiddle = 3;
         uint256 quotaCapLate = 3;
 
+        // For testnet set VRF_COORDINATOR and VRF_SUBSCRIPTION_ID; for local use placeholder (deploy VRFCoordinatorV2_5Mock and pass if needed).
+        address vrfCoordinator = address(0xBeef);
+        uint64 vrfSubscriptionId = 1;
+
         vm.startBroadcast(pk);
 
         factory = new CircleVaultFactory();
         factory.createCircle(
             name,
+            "DevconShare",
+            "DCS",
+            "DevconPosition",
+            "DCP",
             targetValue,
             totalInstallments,
             startTime,
@@ -37,7 +45,9 @@ contract CreateCircleScript is Script {
             exitFeeBps,
             quotaCapEarly,
             quotaCapMiddle,
-            quotaCapLate
+            quotaCapLate,
+            vrfCoordinator,
+            vrfSubscriptionId
         );
 
         vm.stopBroadcast();
