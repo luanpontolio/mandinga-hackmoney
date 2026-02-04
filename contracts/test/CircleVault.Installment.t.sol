@@ -20,6 +20,7 @@ contract CircleVaultInstallmentTest is Test {
 
     uint256 constant TARGET = 1_000e18;
     uint256 constant INSTALLMENTS = 10;
+    uint256 constant INSTALLMENT_AMOUNT = TARGET / INSTALLMENTS;
     uint256 constant NUM_USERS = 4;
     uint16 constant EXIT_FEE_BPS = 200;
     uint256 constant QUOTA_EARLY = 2;
@@ -35,6 +36,10 @@ contract CircleVaultInstallmentTest is Test {
         vm.startPrank(creator);
         vault = factory.createCircle(
             "InstallmentCircle",
+            "InstallmentShare",
+            "IS",
+            "InstallmentPosition",
+            "IP",
             TARGET,
             INSTALLMENTS,
             block.timestamp + 1 days,
@@ -44,7 +49,9 @@ contract CircleVaultInstallmentTest is Test {
             EXIT_FEE_BPS,
             QUOTA_EARLY,
             QUOTA_MIDDLE,
-            QUOTA_LATE
+            QUOTA_LATE,
+            address(0xBeef),
+            1
         );
         vm.stopPrank();
 
@@ -55,7 +62,7 @@ contract CircleVaultInstallmentTest is Test {
         participant = address(0x20);
         vm.deal(participant, TARGET + INSTALLMENTS * (TARGET / INSTALLMENTS) + 1e18);
         vm.prank(participant);
-        CircleVault(payable(vault)).deposit{value: TARGET}(0);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(0);
     }
 
     function test_PayInstallment_MintsClaimsAndUpdatesPosition() public {
@@ -69,8 +76,8 @@ contract CircleVaultInstallmentTest is Test {
 
         uint256 tokenId = CircleVault(payable(vault)).participantToTokenId(participant);
         PositionNFT.PositionData memory pos = PositionNFT(positionNft).getPosition(tokenId);
-        assertEq(pos.paidInstallments, 1);
-        assertEq(pos.totalPaid, installmentAmt);
+        assertEq(pos.paidInstallments, 2); // 1 from deposit + 1 from this payInstallment
+        assertEq(pos.totalPaid, 2 * installmentAmt);
     }
 
     function test_PayInstallment_RevertsWrongAmount() public {
@@ -97,7 +104,7 @@ contract CircleVaultInstallmentTest is Test {
         uint256 tokenId = CircleVault(payable(vault)).participantToTokenId(participant);
 
         vm.expectEmit(true, true, true, true);
-        emit InstallmentPaid(participant, tokenId, installmentAmt, installmentAmt);
+        emit InstallmentPaid(participant, tokenId, installmentAmt, 2 * installmentAmt); // totalPaid after 1st payInstallment (deposit was 1st)
 
         vm.prank(participant);
         CircleVault(payable(vault)).payInstallment{value: installmentAmt}();
@@ -106,6 +113,7 @@ contract CircleVaultInstallmentTest is Test {
     function test_PayInstallment_UntilFullyPaid() public {
         uint256 installmentAmt = CircleVault(payable(vault)).installmentAmount();
 
+        // Deposit already paid 1st installment; pay remaining INSTALLMENTS - 1
         for (uint256 i = 1; i < INSTALLMENTS; i++) {
             vm.prank(participant);
             CircleVault(payable(vault)).payInstallment{value: installmentAmt}();
@@ -113,13 +121,6 @@ contract CircleVaultInstallmentTest is Test {
 
         uint256 tokenId = CircleVault(payable(vault)).participantToTokenId(participant);
         PositionNFT.PositionData memory pos = PositionNFT(positionNft).getPosition(tokenId);
-        assertEq(pos.paidInstallments, INSTALLMENTS - 1);
-        assertEq(pos.totalPaid, (INSTALLMENTS - 1) * installmentAmt);
-
-        vm.prank(participant);
-        CircleVault(payable(vault)).payInstallment{value: installmentAmt}();
-
-        pos = PositionNFT(positionNft).getPosition(tokenId);
         assertEq(pos.paidInstallments, INSTALLMENTS);
         assertEq(pos.totalPaid, TARGET);
 

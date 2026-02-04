@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
-
 import "forge-std/Test.sol";
 import "../src/CircleVaultFactory.sol";
 import "../src/CircleVault.sol";
@@ -19,6 +16,7 @@ contract CircleVaultExitTest is Test {
 
     uint256 constant TARGET = 1_000e18;
     uint256 constant INSTALLMENTS = 10;
+    uint256 constant INSTALLMENT_AMOUNT = TARGET / INSTALLMENTS;
     uint256 constant NUM_USERS = 4;
     uint16 constant EXIT_FEE_BPS = 200; // 2%
     uint256 constant QUOTA_EARLY = 2;
@@ -34,6 +32,10 @@ contract CircleVaultExitTest is Test {
         vm.startPrank(creator);
         vault = factory.createCircle(
             "ExitCircle",
+            "ExitShare",
+            "ES",
+            "ExitPosition",
+            "EP",
             TARGET,
             INSTALLMENTS,
             block.timestamp + 1 days,
@@ -43,7 +45,9 @@ contract CircleVaultExitTest is Test {
             EXIT_FEE_BPS,
             QUOTA_EARLY,
             QUOTA_MIDDLE,
-            QUOTA_LATE
+            QUOTA_LATE,
+            address(0xBeef),
+            1
         );
         vm.stopPrank();
 
@@ -54,7 +58,7 @@ contract CircleVaultExitTest is Test {
         participant = address(0x30);
         vm.deal(participant, TARGET + 1e18);
         vm.prank(participant);
-        CircleVault(payable(vault)).deposit{value: TARGET}(0);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(0);
     }
 
     function test_ExitEarly_BurnsClaimsPaysNetSetsExited() public {
@@ -79,7 +83,7 @@ contract CircleVaultExitTest is Test {
     }
 
     function test_ExitEarly_PartialAmount() public {
-        uint256 half = TARGET / 2;
+        uint256 half = INSTALLMENT_AMOUNT / 2;
         vm.prank(participant);
         ERC20Claim(shareToken).approve(vault, half);
 
@@ -91,7 +95,7 @@ contract CircleVaultExitTest is Test {
         uint256 expectedFee = (half * EXIT_FEE_BPS) / 10_000;
         uint256 expectedNet = half - expectedFee;
 
-        assertEq(ERC20Claim(shareToken).balanceOf(participant), TARGET - half);
+        assertEq(ERC20Claim(shareToken).balanceOf(participant), INSTALLMENT_AMOUNT - half);
         assertEq(participant.balance, balanceBefore + expectedNet);
 
         uint256 tokenId = CircleVault(payable(vault)).participantToTokenId(participant);
@@ -109,7 +113,7 @@ contract CircleVaultExitTest is Test {
     function test_ExitEarly_RevertsInsufficientClaims() public {
         vm.prank(participant);
         vm.expectRevert(CircleErrors.InsufficientClaims.selector);
-        CircleVault(payable(vault)).exitEarly(TARGET + 1);
+        CircleVault(payable(vault)).exitEarly(INSTALLMENT_AMOUNT + 1);
     }
 
     function test_ExitEarly_RevertsZeroAmount() public {
@@ -119,7 +123,7 @@ contract CircleVaultExitTest is Test {
     }
 
     function test_ExitEarly_EmitsEarlyExit() public {
-        uint256 amount = TARGET;
+        uint256 amount = INSTALLMENT_AMOUNT;
         uint256 tokenId = CircleVault(payable(vault)).participantToTokenId(participant);
         uint256 feeAmount = (amount * EXIT_FEE_BPS) / 10_000;
         uint256 netAmount = amount - feeAmount;
@@ -140,7 +144,7 @@ contract CircleVaultExitTest is Test {
         vm.prank(participant);
         CircleVault(payable(vault)).payInstallment{value: installmentAmt}();
 
-        uint256 totalClaims = TARGET + installmentAmt;
+        uint256 totalClaims = 2 * installmentAmt; // deposit (1st installment) + one payInstallment
         vm.prank(participant);
         ERC20Claim(shareToken).approve(vault, totalClaims);
 
