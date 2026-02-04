@@ -2,22 +2,24 @@
 pragma solidity ^0.8.20;
 
 import "./CircleVault.sol";
-import "./ERC20Claim.sol";
-import "./PositionNFT.sol";
+import "./CircleDeployer.sol";
+import "./libraries/CircleIdLib.sol";
 
 contract CircleVaultFactory {
+    using CircleIdLib for *;
+
     struct CircleInfo {
+        bytes32 circleId;
         address vault;
         address shareToken;
         address positionNft;
-        bytes32 circleId;
-        string name;
+        address drawConsumer;
     }
 
     CircleInfo[] public circles;
-
-    /// circleId => vault
     mapping(bytes32 => address) public circleById;
+
+    CircleDeployer public immutable deployer;
 
     event CircleCreated(
         address indexed vault,
@@ -28,12 +30,16 @@ contract CircleVaultFactory {
 
     error CircleAlreadyExists();
 
-    /*───────────────────────────*
-     *         CREATE CIRCLE      *
-     *───────────────────────────*/
+    constructor() {
+        deployer = new CircleDeployer(address(this));
+    }
 
     function createCircle(
-        string memory name_,
+        string calldata name,
+        string calldata shareName,
+        string calldata shareSymbol,
+        string calldata positionName,
+        string calldata positionSymbol,
         uint256 targetValue,
         uint256 totalInstallments,
         uint256 startTime,
@@ -43,19 +49,21 @@ contract CircleVaultFactory {
         uint16 exitFeeBps,
         uint256 quotaCapEarly,
         uint256 quotaCapMiddle,
-        uint256 quotaCapLate
+        uint256 quotaCapLate,
+        address vrfCoordinator,
+        uint64 vrfSubscriptionId
     ) external returns (address vault) {
         require(exitFeeBps <= 500, "exit fee too high");
         require(totalInstallments > 0, "installments=0");
         require(numUsers == numRounds, "users != rounds");
         require(
             quotaCapEarly + quotaCapMiddle + quotaCapLate == numUsers,
-            "quota caps must sum to numUsers"
+            "quota caps mismatch"
         );
 
-        bytes32 circleId = _circleId(
+        bytes32 circleId = CircleIdLib.compute(
             msg.sender,
-            name_,
+            name,
             startTime,
             targetValue,
             totalInstallments,
@@ -65,301 +73,76 @@ contract CircleVaultFactory {
             exitFeeBps,
             quotaCapEarly,
             quotaCapMiddle,
-            quotaCapLate
+            quotaCapLate,
+            vrfCoordinator,
+            vrfSubscriptionId
         );
 
-        address existing = circleById[circleId];
-        if (existing != address(0)) {
+        if (circleById[circleId] != address(0)) {
             revert CircleAlreadyExists();
         }
 
-        ERC20Claim shareToken = new ERC20Claim{salt: _shareSalt(circleId)}(
-            string.concat("Mandinga Share ", name_),
-            string.concat("MS", name_),
-            address(this)
+        address shareToken = deployer.deployShareToken(
+            keccak256(abi.encode(circleId, "SHARE")),
+            shareName,
+            shareSymbol
         );
 
-        PositionNFT positionNft = new PositionNFT{salt: _positionSalt(circleId)}(
-            string.concat("Mandinga Position ", name_),
-            string.concat("MP", name_),
-            address(this)
+        address positionNft = deployer.deployPositionNFT(
+            keccak256(abi.encode(circleId, "POSITION")),
+            positionName,
+            positionSymbol
         );
 
-        vault = address(
-            new CircleVault{salt: _circleSalt(circleId)}(
-                name_,
-                targetValue,
-                totalInstallments,
-                startTime,
-                timePerRound,
-                numRounds,
-                numUsers,
-                exitFeeBps,
-                address(shareToken),
-                address(positionNft),
-                msg.sender,
-                quotaCapEarly,
-                quotaCapMiddle,
-                quotaCapLate
-            )
+        address drawConsumer = deployer.deployDrawConsumer(
+            keccak256(abi.encode(circleId, "DRAW_CONSUMER")),
+            vrfCoordinator,
+            vrfSubscriptionId
         );
 
-        shareToken.transferOwnership(vault);
-        positionNft.transferOwnership(vault);
+        CircleVault.CircleParams memory params = CircleVault.CircleParams({
+            name: name,
+            targetValue: targetValue,
+            totalInstallments: totalInstallments,
+            startTime: startTime,
+            timePerRound: timePerRound,
+            numRounds: numRounds,
+            numUsers: numUsers,
+            exitFeeBps: exitFeeBps,
+            shareToken: shareToken,
+            positionNft: positionNft,
+            quotaCapEarly: quotaCapEarly,
+            quotaCapMiddle: quotaCapMiddle,
+            quotaCapLate: quotaCapLate,
+            drawConsumer: drawConsumer
+        });
+
+        vault = deployer.deployVault(circleId, params, msg.sender);
+
+        DrawConsumer(drawConsumer).setVault(vault);
+        ERC20Claim(shareToken).transferOwnership(vault);
+        PositionNFT(positionNft).transferOwnership(vault);
 
         circleById[circleId] = vault;
 
         circles.push(
             CircleInfo({
-                vault: vault,
-                shareToken: address(shareToken),
-                positionNft: address(positionNft),
                 circleId: circleId,
-                name: name_
+                vault: vault,
+                shareToken: shareToken,
+                positionNft: positionNft,
+                drawConsumer: drawConsumer
             })
         );
 
-        emit CircleCreated(vault, msg.sender, circleId, name_);
-    }
-
-    /*───────────────────────────*
-     *        VIEW HELPERS        *
-     *───────────────────────────*/
-
-    function computeCircleId(
-        address creator,
-        string memory name_,
-        uint256 startTime,
-        uint256 targetValue,
-        uint256 totalInstallments,
-        uint256 timePerRound,
-        uint256 numRounds,
-        uint256 numUsers,
-        uint16 exitFeeBps,
-        uint256 quotaCapEarly,
-        uint256 quotaCapMiddle,
-        uint256 quotaCapLate
-    ) external view returns (bytes32) {
-        return _circleId(
-            creator,
-            name_,
-            startTime,
-            targetValue,
-            totalInstallments,
-            timePerRound,
-            numRounds,
-            numUsers,
-            exitFeeBps,
-            quotaCapEarly,
-            quotaCapMiddle,
-            quotaCapLate
-        );
-    }
-
-    function getCirclesCount() external view returns (uint256) {
-        return circles.length;
+        emit CircleCreated(vault, msg.sender, circleId, name);
     }
 
     function getCircle(uint256 index) external view returns (CircleInfo memory) {
         return circles[index];
     }
 
-    /*───────────────────────────*
-     *     ADDRESS PREDICTION     *
-     *───────────────────────────*/
-
-    function predictVaultAddress(
-        bytes32 circleId,
-        bytes memory vaultConstructorArgs
-    ) external view returns (address predicted) {
-        bytes memory bytecode = abi.encodePacked(
-            type(CircleVault).creationCode,
-            vaultConstructorArgs
-        );
-
-        predicted = _predictCreate2Address(
-            _circleSalt(circleId),
-            bytecode
-        );
-
-        return predicted;
-    }
-
-    function predictERC20ClaimAddress(
-        bytes32 circleId,
-        bytes memory constructorArgs
-    ) external view returns (address predicted) {
-        bytes memory bytecode = abi.encodePacked(
-            type(ERC20Claim).creationCode,
-            constructorArgs
-        );
-
-        predicted = _predictCreate2Address(
-            _shareSalt(circleId),
-            bytecode
-        );
-
-        return predicted;
-    }
-
-    function predictPositionNFTAddress(
-        bytes32 circleId,
-        bytes memory constructorArgs
-    ) external view returns (address predicted) {
-        bytes memory bytecode = abi.encodePacked(
-            type(PositionNFT).creationCode,
-            constructorArgs
-        );
-
-        predicted = _predictCreate2Address(
-            _positionSalt(circleId),
-            bytecode
-        );
-
-        return predicted;
-    }
-
-    function predictAddresses(
-        address creator,
-        string memory name_,
-        uint256 targetValue,
-        uint256 totalInstallments,
-        uint256 startTime,
-        uint256 timePerRound,
-        uint256 numRounds,
-        uint256 numUsers,
-        uint16 exitFeeBps,
-        uint256 quotaCapEarly,
-        uint256 quotaCapMiddle,
-        uint256 quotaCapLate
-    )
-        external
-        view
-        returns (address predictedVault, address predictedShare, address predictedPosition)
-    {
-        bytes32 circleId = _circleId(
-            creator,
-            name_,
-            startTime,
-            targetValue,
-            totalInstallments,
-            timePerRound,
-            numRounds,
-            numUsers,
-            exitFeeBps,
-            quotaCapEarly,
-            quotaCapMiddle,
-            quotaCapLate
-        );
-
-        bytes memory shareArgs = abi.encode(
-            string.concat("Mandinga Share ", name_),
-            string.concat("MS", name_),
-            address(this)
-        );
-        predictedShare = _predictCreate2Address(
-            _shareSalt(circleId),
-            abi.encodePacked(type(ERC20Claim).creationCode, shareArgs)
-        );
-
-        bytes memory positionArgs = abi.encode(
-            string.concat("Mandinga Position ", name_),
-            string.concat("MP", name_),
-            address(this)
-        );
-        predictedPosition = _predictCreate2Address(
-            _positionSalt(circleId),
-            abi.encodePacked(type(PositionNFT).creationCode, positionArgs)
-        );
-
-        bytes memory vaultArgs = abi.encode(
-            name_,
-            targetValue,
-            totalInstallments,
-            startTime,
-            timePerRound,
-            numRounds,
-            numUsers,
-            exitFeeBps,
-            predictedShare,
-            predictedPosition,
-            creator,
-            quotaCapEarly,
-            quotaCapMiddle,
-            quotaCapLate
-        );
-        predictedVault = _predictCreate2Address(
-            _circleSalt(circleId),
-            abi.encodePacked(type(CircleVault).creationCode, vaultArgs)
-        );
-    }
-
-    /*───────────────────────────*
-     *      INTERNAL HELPERS      *
-     *───────────────────────────*/
-
-    function _circleId(
-        address creator,
-        string memory name_,
-        uint256 startTime,
-        uint256 targetValue,
-        uint256 totalInstallments,
-        uint256 timePerRound,
-        uint256 numRounds,
-        uint256 numUsers,
-        uint16 exitFeeBps,
-        uint256 quotaCapEarly,
-        uint256 quotaCapMiddle,
-        uint256 quotaCapLate
-    ) internal view returns (bytes32) {
-        return keccak256(
-            abi.encode(
-                creator,
-                name_,
-                startTime,
-                targetValue,
-                totalInstallments,
-                timePerRound,
-                numRounds,
-                numUsers,
-                exitFeeBps,
-                quotaCapEarly,
-                quotaCapMiddle,
-                quotaCapLate,
-                block.chainid
-            )
-        );
-    }
-
-    function _circleSalt(bytes32 circleId) internal pure returns (bytes32) {
-        return circleId;
-    }
-
-    function _shareSalt(bytes32 circleId) internal pure returns (bytes32) {
-        return keccak256(abi.encode(circleId, "SHARE"));
-    }
-
-    function _positionSalt(bytes32 circleId) internal pure returns (bytes32) {
-        return keccak256(abi.encode(circleId, "POSITION"));
-    }
-
-    function _predictCreate2Address(
-        bytes32 salt,
-        bytes memory bytecode
-    ) internal view returns (address predicted) {
-        predicted = address(
-            uint160(
-                uint256(
-                    keccak256(
-                        abi.encodePacked(
-                            bytes1(0xff),
-                            address(this),
-                            salt,
-                            keccak256(bytecode)
-                        )
-                    )
-                )
-            )
-        );
+    function getCirclesCount() external view returns (uint256) {
+        return circles.length;
     }
 }

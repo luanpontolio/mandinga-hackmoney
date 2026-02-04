@@ -17,6 +17,7 @@ library CircleErrors {
     error CircleNotActive();
     error PositionNotActive();
     error PositionFullyPaid();
+    error JoinAfterDeadline();
     error InsufficientClaims();
     error InsufficientBalance();
     error InsufficientSnapshot();
@@ -30,4 +31,5 @@ library CircleErrors {
     error ZeroAmount();
     error InvalidQuota();
     error QuotaFull();
+    error AlreadySettled();
 }

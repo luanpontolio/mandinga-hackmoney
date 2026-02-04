@@ -29,16 +29,6 @@ interface ICircleVaultFactory {
         bytes memory vaultConstructorArgs
     ) external view returns (address predicted);
 
-    function predictERC20ClaimAddress(
-        bytes32 circleId,
-        bytes memory constructorArgs
-    ) external view returns (address predicted);
-
-    function predictPositionNFTAddress(
-        bytes32 circleId,
-        bytes memory constructorArgs
-    ) external view returns (address predicted);
-
     function getCircle(uint256 index) external view returns (CircleInfo memory);
 
     function getCirclesCount() external view returns (uint256);

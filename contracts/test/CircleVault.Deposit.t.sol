@@ -19,6 +19,7 @@ contract CircleVaultDepositTest is Test {
 
     uint256 constant TARGET = 1_000e18;
     uint256 constant INSTALLMENTS = 10;
+    uint256 constant INSTALLMENT_AMOUNT = TARGET / INSTALLMENTS;
     uint256 constant NUM_USERS = 6;
     uint16 constant EXIT_FEE_BPS = 200;
     uint256 constant QUOTA_EARLY = 2;
@@ -32,6 +33,10 @@ contract CircleVaultDepositTest is Test {
         vm.startPrank(creator);
         vault = factory.createCircle(
             "DepositCircle",
+            "DepositShare",
+            "DS",
+            "DepositPosition",
+            "DP",
             TARGET,
             INSTALLMENTS,
             block.timestamp + 1 days,
@@ -41,7 +46,9 @@ contract CircleVaultDepositTest is Test {
             EXIT_FEE_BPS,
             QUOTA_EARLY,
             QUOTA_MIDDLE,
-            QUOTA_LATE
+            QUOTA_LATE,
+            address(0xBeef),
+            1
         );
         vm.stopPrank();
 
@@ -55,10 +62,10 @@ contract CircleVaultDepositTest is Test {
         vm.deal(user, TARGET + 1e18);
 
         vm.prank(user);
-        CircleVault(payable(vault)).deposit{value: TARGET}(0); // quota early
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(0); // quota early
 
         assertEq(PositionNFT(positionNft).balanceOf(user), 1);
-        assertEq(ERC20Claim(shareToken).balanceOf(user), TARGET);
+        assertEq(ERC20Claim(shareToken).balanceOf(user), INSTALLMENT_AMOUNT);
         assertEq(CircleVault(payable(vault)).participantToTokenId(user), 1);
         assertTrue(CircleVault(payable(vault)).isEnrolled(user));
 
@@ -66,8 +73,8 @@ contract CircleVaultDepositTest is Test {
         assertEq(pos.quotaId, 0);
         assertEq(pos.targetValue, TARGET);
         assertEq(pos.totalInstallments, INSTALLMENTS);
-        assertEq(pos.paidInstallments, 0);
-        assertEq(pos.totalPaid, 0);
+        assertEq(pos.paidInstallments, 1);
+        assertEq(pos.totalPaid, INSTALLMENT_AMOUNT);
         assertEq(uint256(pos.status), uint256(PositionNFT.Status.ACTIVE));
     }
 
@@ -80,17 +87,17 @@ contract CircleVaultDepositTest is Test {
         vm.deal(u3, TARGET + 1e18);
 
         vm.prank(u1);
-        CircleVault(payable(vault)).deposit{value: TARGET}(0);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(0);
         vm.prank(u2);
-        CircleVault(payable(vault)).deposit{value: TARGET}(0);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(0);
         // Quota 0 (early) is full (cap 2)
         vm.prank(u3);
         vm.expectRevert(CircleErrors.QuotaFull.selector);
-        CircleVault(payable(vault)).deposit{value: TARGET}(0);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(0);
 
         // Quota 1 has room
         vm.prank(u3);
-        CircleVault(payable(vault)).deposit{value: TARGET}(1);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(1);
     }
 
     function test_Deposit_RevertsWrongAmount() public {
@@ -99,7 +106,7 @@ contract CircleVaultDepositTest is Test {
 
         vm.prank(user);
         vm.expectRevert(CircleErrors.IncorrectDepositAmount.selector);
-        CircleVault(payable(vault)).deposit{value: TARGET - 1}(0);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT - 1}(0);
     }
 
     function test_Deposit_RevertsInvalidQuota() public {
@@ -108,7 +115,7 @@ contract CircleVaultDepositTest is Test {
 
         vm.prank(user);
         vm.expectRevert(CircleErrors.InvalidQuota.selector);
-        CircleVault(payable(vault)).deposit{value: TARGET}(3);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(3);
     }
 
     function test_Deposit_RevertsAlreadyEnrolled() public {
@@ -116,11 +123,22 @@ contract CircleVaultDepositTest is Test {
         vm.deal(user, TARGET * 2 + 1e18);
 
         vm.prank(user);
-        CircleVault(payable(vault)).deposit{value: TARGET}(0);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(0);
 
         vm.prank(user);
         vm.expectRevert(CircleErrors.AlreadyEnrolled.selector);
-        CircleVault(payable(vault)).deposit{value: TARGET}(1);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(1);
+    }
+
+    function test_Deposit_RevertsJoinAfterDeadline() public {
+        address user = address(0x10);
+        vm.deal(user, TARGET + 1e18);
+        // Join deadline for quota 0 (early) is closeWindowEarly = startTime + 7 days; warp past it
+        vm.warp(CircleVault(payable(vault)).getCloseWindowTimestamp(0) + 1);
+
+        vm.prank(user);
+        vm.expectRevert(CircleErrors.JoinAfterDeadline.selector);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(0);
     }
 
     function test_Deposit_EmitsParticipantEnrolled() public {
@@ -128,10 +146,10 @@ contract CircleVaultDepositTest is Test {
         vm.deal(user, TARGET + 1e18);
 
         vm.expectEmit(true, true, true, true);
-        emit ParticipantEnrolled(user, 1, TARGET);
+        emit ParticipantEnrolled(user, 1, INSTALLMENT_AMOUNT);
 
         vm.prank(user);
-        CircleVault(payable(vault)).deposit{value: TARGET}(0);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(0);
     }
 
     function test_Deposit_AllThreeQuotas() public {
@@ -143,11 +161,11 @@ contract CircleVaultDepositTest is Test {
         vm.deal(u3, TARGET + 1e18);
 
         vm.prank(u1);
-        CircleVault(payable(vault)).deposit{value: TARGET}(0);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(0);
         vm.prank(u2);
-        CircleVault(payable(vault)).deposit{value: TARGET}(1);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(1);
         vm.prank(u3);
-        CircleVault(payable(vault)).deposit{value: TARGET}(2);
+        CircleVault(payable(vault)).deposit{value: INSTALLMENT_AMOUNT}(2);
 
         assertEq(CircleVault(payable(vault)).quotaFilledEarly(), 1);
         assertEq(CircleVault(payable(vault)).quotaFilledMiddle(), 1);

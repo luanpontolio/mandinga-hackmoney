@@ -11,7 +11,7 @@ contract CircleVaultScript is Script {
         uint256 quotaId = vm.envOr("QUOTA_ID", uint256(0)); // 0=early, 1=middle, 2=late
 
         CircleVault vault = CircleVault(payable(vaultAddress));
-        uint256 amount = vault.targetValue();
+        uint256 amount = vault.installmentAmount();
 
         vm.startBroadcast(pk);
         vault.deposit{value: amount}(quotaId);
