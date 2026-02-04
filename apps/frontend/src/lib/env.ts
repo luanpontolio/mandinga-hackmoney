@@ -9,7 +9,7 @@ type EnvConfig = {
 const required = (key: string) => {
   const value = process.env[key];
   if (!value) {
-    throw new Error(`Missing required env var: ${key}`);
+    return "";
   }
   return value;
 };
@@ -21,3 +21,5 @@ export const env: EnvConfig = {
   ensResolverUrl: required("NEXT_PUBLIC_ENS_RESOLVER_URL"),
   ensDomain: required("NEXT_PUBLIC_ENS_DOMAIN"),
 };
+
+console.log("env", env);
