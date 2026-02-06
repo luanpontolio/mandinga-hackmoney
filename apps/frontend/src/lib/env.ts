@@ -2,6 +2,7 @@ type EnvConfig = {
   rpcUrl: string;
   chainId: string;
   factoryAddress: string;
+  factoryFromBlock: string;
   ensResolverUrl: string;
   ensDomain: string;
 };
@@ -15,11 +16,12 @@ const required = (key: string) => {
 };
 
 export const env: EnvConfig = {
-  rpcUrl: required("NEXT_PUBLIC_RPC_URL"),
-  chainId: required("NEXT_PUBLIC_CHAIN_ID"),
-  factoryAddress: required("NEXT_PUBLIC_FACTORY_ADDRESS"),
-  ensResolverUrl: required("NEXT_PUBLIC_ENS_RESOLVER_URL"),
-  ensDomain: required("NEXT_PUBLIC_ENS_DOMAIN"),
+  rpcUrl: process.env.NEXT_PUBLIC_RPC_URL ?? "",
+  chainId: process.env.NEXT_PUBLIC_CHAIN_ID ?? "",
+  factoryAddress: process.env.NEXT_PUBLIC_FACTORY_ADDRESS ?? "",
+  factoryFromBlock: process.env.NEXT_PUBLIC_FACTORY_FROM_BLOCK ?? "",
+  ensResolverUrl: process.env.NEXT_PUBLIC_ENS_RESOLVER_URL ?? "",
+  ensDomain: process.env.NEXT_PUBLIC_ENS_DOMAIN ?? "",
 };
 
 console.log("env", env);
