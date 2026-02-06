@@ -15,6 +15,7 @@
     "dev:frontend": "bun --filter './apps/frontend' run dev",
     "build:gateway": "bun --filter './apps/gateway' run build",
     "dev:gateway": "bun --filter './apps/gateway' run dev",
-    "test:contracts": "cd contracts && forge test"
+    "test:contracts": "cd contracts && forge test",
+    "test:contracts:coverage": "cd contracts && forge coverage --ir-minimum"
   }
 }

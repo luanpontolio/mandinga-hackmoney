@@ -1,14 +1,20 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
 import "forge-std/Test.sol";
 import "../src/CircleVaultFactory.sol";
+import "../src/CircleVaultFactoryDeployer.sol";
 import "../src/CircleVault.sol";
 import "../src/PositionNFT.sol";
 import "../src/ERC20Claim.sol";
 import "../src/libraries/CircleError.sol";
+import "../src/libraries/CircleIdLib.sol";
 
 contract CircleVaultExitTest is Test {
     event EarlyExit(address indexed participant, uint256 indexed tokenId, uint256 claimAmount, uint256 feeAmount, uint256 netAmount);
 
     CircleVaultFactory factory;
+    CircleVaultFactoryDeployer deployer;
     address vault;
     address shareToken;
     address positionNft;
@@ -26,32 +32,32 @@ contract CircleVaultExitTest is Test {
     address participant;
 
     function setUp() public {
-        factory = new CircleVaultFactory();
+        deployer = new CircleVaultFactoryDeployer();
+        factory = new CircleVaultFactory(address(deployer));
         vm.deal(address(this), 100_000e18);
 
+        uint256 startTime = block.timestamp + 1 days;
+        CircleVaultFactory.CreateCircleParams memory p = CircleVaultFactory.CreateCircleParams({
+            name: "ExitCircle",
+            targetValue: TARGET,
+            totalInstallments: INSTALLMENTS,
+            startTime: startTime,
+            timePerRound: 7 days,
+            numRounds: NUM_USERS,
+            numUsers: NUM_USERS,
+            exitFeeBps: EXIT_FEE_BPS,
+            quotaCapEarly: QUOTA_EARLY,
+            quotaCapMiddle: QUOTA_MIDDLE,
+            quotaCapLate: QUOTA_LATE,
+            vrfCoordinator: address(0xBeef),
+            vrfSubscriptionId: 1
+        });
         vm.startPrank(creator);
-        vault = factory.createCircle(
-            "ExitCircle",
-            "ExitShare",
-            "ES",
-            "ExitPosition",
-            "EP",
-            TARGET,
-            INSTALLMENTS,
-            block.timestamp + 1 days,
-            7 days,
-            NUM_USERS,
-            NUM_USERS,
-            EXIT_FEE_BPS,
-            QUOTA_EARLY,
-            QUOTA_MIDDLE,
-            QUOTA_LATE,
-            address(0xBeef),
-            1
-        );
+        vault = factory.createCircle(p);
         vm.stopPrank();
 
-        CircleVaultFactory.CircleInfo memory info = factory.getCircle(0);
+        bytes32 circleId = CircleIdLib.compute(creator, p.name, p.startTime, p.targetValue, p.totalInstallments, p.timePerRound, p.numRounds, p.numUsers, p.exitFeeBps, p.quotaCapEarly, p.quotaCapMiddle, p.quotaCapLate, p.vrfCoordinator, p.vrfSubscriptionId);
+        CircleVaultFactory.CircleInfo memory info = factory.getCircle(circleId);
         shareToken = info.shareToken;
         positionNft = info.positionNft;
 

@@ -3,240 +3,108 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "../src/CircleVaultFactory.sol";
+import "../src/CircleVaultFactoryDeployer.sol";
+import "../src/libraries/CircleIdLib.sol";
 
 contract CircleFactoryTest is Test {
     CircleVaultFactory private factory;
+    CircleVaultFactoryDeployer private deployer;
     address constant VRF = address(0xBeef);
 
     function setUp() public {
-        factory = new CircleVaultFactory();
+        deployer = new CircleVaultFactoryDeployer();
+        factory = new CircleVaultFactory(address(deployer));
     }
 
-    function createArgs()
-        internal
-        view
-        returns (
-            string memory name,
-            string memory shareName,
-            string memory shareSymbol,
-            string memory positionName,
-            string memory positionSymbol,
-            uint256 targetValue,
-            uint256 totalInstallments,
-            uint256 startTime,
-            uint256 timePerRound,
-            uint256 numRounds,
-            uint256 numUsers,
-            uint16 exitFeeBps,
-            uint256 quotaCapEarly,
-            uint256 quotaCapMiddle,
-            uint256 quotaCapLate
-        )
-    {
-        name = "testcircle";
-        shareName = "Test Circle Share";
-        shareSymbol = "TCS";
-        positionName = "Test Circle Position";
-        positionSymbol = "TCP";
-        targetValue = 5_000e18; // 5,000 (18 decimals)
-        totalInstallments = 12;
-        startTime = block.timestamp + 1 days;
-        timePerRound = 7 days;
-        numRounds = 10;
-        numUsers = 10;
-        exitFeeBps = 200; // 2%
-        quotaCapEarly = 4;
-        quotaCapMiddle = 3;
-        quotaCapLate = 3;
+    function createParams() internal view returns (CircleVaultFactory.CreateCircleParams memory p) {
+        p.name = "testcircle";
+        p.targetValue = 5_000e18; // 5,000 (18 decimals)
+        p.totalInstallments = 12;
+        p.startTime = block.timestamp + 1 days;
+        p.timePerRound = 7 days;
+        p.numRounds = 10;
+        p.numUsers = 10;
+        p.exitFeeBps = 200; // 2%
+        p.quotaCapEarly = 4;
+        p.quotaCapMiddle = 3;
+        p.quotaCapLate = 3;
+        p.vrfCoordinator = VRF;
+        p.vrfSubscriptionId = 1;
+    }
+
+    function createParams(string memory name) internal view returns (CircleVaultFactory.CreateCircleParams memory p) {
+        p = createParams();
+        p.name = name;
     }
 
     function testCreateCircleStoresAddresses() public {
-        (
-            string memory name,
-            string memory shareName,
-            string memory shareSymbol,
-            string memory positionName,
-            string memory positionSymbol,
-            uint256 targetValue,
-            uint256 totalInstallments,
-            uint256 startTime,
-            uint256 timePerRound,
-            uint256 numRounds,
-            uint256 numUsers,
-            uint16 exitFeeBps,
-            uint256 quotaCapEarly,
-            uint256 quotaCapMiddle,
-            uint256 quotaCapLate
-        ) = createArgs();
-
-        address vault = factory.createCircle(name, shareName, shareSymbol, positionName, positionSymbol, targetValue, totalInstallments, startTime, timePerRound, numRounds, numUsers, exitFeeBps, quotaCapEarly, quotaCapMiddle, quotaCapLate, VRF, 1);
+        CircleVaultFactory.CreateCircleParams memory p = createParams();
+        address vault = factory.createCircle(p);
 
         assertTrue(vault != address(0));
         assertEq(factory.getCirclesCount(), 1);
 
-        CircleVaultFactory.CircleInfo memory info = factory.getCircle(0);
+        bytes32 circleId = CircleIdLib.compute(address(this), p.name, p.startTime, p.targetValue, p.totalInstallments, p.timePerRound, p.numRounds, p.numUsers, p.exitFeeBps, p.quotaCapEarly, p.quotaCapMiddle, p.quotaCapLate, p.vrfCoordinator, p.vrfSubscriptionId);
+        CircleVaultFactory.CircleInfo memory info = factory.getCircle(circleId);
         assertEq(info.vault, vault);
         assertTrue(info.shareToken != address(0));
         assertTrue(info.positionNft != address(0));
     }
 
     function testCreateCircleCheckTokensOwnership() public {
-        (
-            string memory name,
-            string memory shareName,
-            string memory shareSymbol,
-            string memory positionName,
-            string memory positionSymbol,
-            uint256 targetValue,
-            uint256 totalInstallments,
-            uint256 startTime,
-            uint256 timePerRound,
-            uint256 numRounds,
-            uint256 numUsers,
-            uint16 exitFeeBps,
-            uint256 quotaCapEarly,
-            uint256 quotaCapMiddle,
-            uint256 quotaCapLate
-        ) = createArgs();
-
         vm.startBroadcast(address(0x1));
-        address vault = factory.createCircle(name, shareName, shareSymbol, positionName, positionSymbol, targetValue, totalInstallments, startTime, timePerRound, numRounds, numUsers, exitFeeBps, quotaCapEarly, quotaCapMiddle, quotaCapLate, VRF, 1);
+        CircleVaultFactory.CreateCircleParams memory p = createParams();
+        address vault = factory.createCircle(p);
         vm.stopBroadcast();
 
-        CircleVaultFactory.CircleInfo memory info = factory.getCircle(0);
+        bytes32 circleId = CircleIdLib.compute(address(0x1), p.name, p.startTime, p.targetValue, p.totalInstallments, p.timePerRound, p.numRounds, p.numUsers, p.exitFeeBps, p.quotaCapEarly, p.quotaCapMiddle, p.quotaCapLate, p.vrfCoordinator, p.vrfSubscriptionId);
+        CircleVaultFactory.CircleInfo memory info = factory.getCircle(circleId);
         assertEq(Ownable(info.shareToken).owner(), vault);
         assertEq(Ownable(info.positionNft).owner(), vault);
     }
 
     function testCreateCircleRevertsIfCircleAlreadyExists() public {
-        (
-            ,
-            string memory shareName,
-            string memory shareSymbol,
-            string memory positionName,
-            string memory positionSymbol,
-            uint256 targetValue,
-            uint256 totalInstallments,
-            uint256 startTime,
-            uint256 timePerRound,
-            uint256 numRounds,
-            uint256 numUsers,
-            uint16 exitFeeBps,
-            uint256 quotaCapEarly,
-            uint256 quotaCapMiddle,
-            uint256 quotaCapLate
-        ) = createArgs();
+        CircleVaultFactory.CreateCircleParams memory p = createParams("test-circle-already-exists");
 
-        string memory name = "test-circle-already-exists";
-
-        factory.createCircle(name, shareName, shareSymbol, positionName, positionSymbol, targetValue, totalInstallments, startTime, timePerRound, numRounds, numUsers, exitFeeBps, quotaCapEarly, quotaCapMiddle, quotaCapLate, VRF, 1);
+        factory.createCircle(p);
 
         vm.expectRevert(CircleVaultFactory.CircleAlreadyExists.selector);
-        factory.createCircle(name, shareName, shareSymbol, positionName, positionSymbol, targetValue, totalInstallments, startTime, timePerRound, numRounds, numUsers, exitFeeBps, quotaCapEarly, quotaCapMiddle, quotaCapLate, VRF, 1);
+        factory.createCircle(p);
     }
 
     function testCreateCircleRevertsIfExitFeeTooHigh() public {
-        (
-            ,
-            ,
-            ,
-            ,
-            ,
-            uint256 targetValue,
-            uint256 totalInstallments,
-            uint256 startTime,
-            uint256 timePerRound,
-            uint256 numRounds,
-            uint256 numUsers,
-            uint16 exitFeeBps,
-            uint256 quotaCapEarly,
-            uint256 quotaCapMiddle,
-            uint256 quotaCapLate
-        ) = createArgs();
+        CircleVaultFactory.CreateCircleParams memory p = createParams("test-fee");
+        p.exitFeeBps = 600; // 6%
 
-        exitFeeBps = 600; // 6%
-
-        vm.expectRevert("exit fee too high");
-        factory.createCircle("test-fee", "Share", "SHR", "Position", "POS", targetValue, totalInstallments, startTime, timePerRound, numRounds, numUsers, exitFeeBps, quotaCapEarly, quotaCapMiddle, quotaCapLate, VRF, 1);
+        vm.expectRevert(CircleVaultFactory.InvalidExitFee.selector);
+        factory.createCircle(p);
     }
 
     function testCreateCircleRevertsIfInstallmentsZero() public {
-        (
-            string memory name,
-            string memory shareName,
-            string memory shareSymbol,
-            string memory positionName,
-            string memory positionSymbol,
-            uint256 targetValue,
-            uint256 totalInstallments,
-            uint256 startTime,
-            uint256 timePerRound,
-            uint256 numRounds,
-            uint256 numUsers,
-            uint16 exitFeeBps,
-            uint256 quotaCapEarly,
-            uint256 quotaCapMiddle,
-            uint256 quotaCapLate
-        ) = createArgs();
+        CircleVaultFactory.CreateCircleParams memory p = createParams();
+        p.totalInstallments = 0;
 
-        totalInstallments = 0;
-
-        vm.expectRevert("installments=0");
-        factory.createCircle(name, shareName, shareSymbol, positionName, positionSymbol, targetValue, totalInstallments, startTime, timePerRound, numRounds, numUsers, exitFeeBps, quotaCapEarly, quotaCapMiddle, quotaCapLate, VRF, 1);
+        vm.expectRevert(CircleVaultFactory.InvalidTotalInstallments.selector);
+        factory.createCircle(p);
     }
 
     function testCreateCircleRevertsIfQuotaCapsDontSumToNumUsers() public {
-        (
-            string memory name,
-            string memory shareName,
-            string memory shareSymbol,
-            string memory positionName,
-            string memory positionSymbol,
-            uint256 targetValue,
-            uint256 totalInstallments,
-            uint256 startTime,
-            uint256 timePerRound,
-            uint256 numRounds,
-            uint256 numUsers,
-            uint16 exitFeeBps,
-            uint256 _qE,
-            uint256 _qM,
-            uint256 _qL
-        ) = createArgs();
-        assert(_qE + _qM + _qL == numUsers); // createArgs returns valid caps
-
+        CircleVaultFactory.CreateCircleParams memory p = createParams();
         // Use caps that don't sum to numUsers (10)
-        uint256 quotaCapEarly = 3;
-        uint256 quotaCapMiddle = 3;
-        uint256 quotaCapLate = 3;
+        p.quotaCapEarly = 3;
+        p.quotaCapMiddle = 3;
+        p.quotaCapLate = 3;
 
-        vm.expectRevert("quota caps mismatch");
-        factory.createCircle(name, shareName, shareSymbol, positionName, positionSymbol, targetValue, totalInstallments, startTime, timePerRound, numRounds, numUsers, exitFeeBps, quotaCapEarly, quotaCapMiddle, quotaCapLate, VRF, 1);
+        vm.expectRevert(CircleVaultFactory.InvalidQuotaCaps.selector);
+        factory.createCircle(p);
     }
 
     function testCreateCircleRevertsIfUsersNotEqualRounds() public {
-        (
-            ,
-            string memory shareName,
-            string memory shareSymbol,
-            string memory positionName,
-            string memory positionSymbol,
-            uint256 targetValue,
-            uint256 totalInstallments,
-            uint256 startTime,
-            uint256 timePerRound,
-            uint256 numRounds,
-            uint256 numUsers,
-            uint16 exitFeeBps,
-            uint256 quotaCapEarly,
-            uint256 quotaCapMiddle,
-            uint256 quotaCapLate
-        ) = createArgs();
+        CircleVaultFactory.CreateCircleParams memory p = createParams("test-user-not-equal-round");
+        p.numUsers = p.numRounds + 1;
 
-        numUsers = numRounds + 1;
-
-        vm.expectRevert("users != rounds");
-        factory.createCircle("test-user-not-equal-round", shareName, shareSymbol, positionName, positionSymbol, targetValue, totalInstallments, startTime, timePerRound, numRounds, numUsers, exitFeeBps, quotaCapEarly, quotaCapMiddle, quotaCapLate, VRF, 1);
+        vm.expectRevert(CircleVaultFactory.InvalidRoundsUsers.selector);
+        factory.createCircle(p);
     }
 
     // function testPredictVaultAddress() public {
@@ -285,26 +153,10 @@ contract CircleFactoryTest is Test {
     // }
 
     function testGetCircle() public {
-        (
-            ,
-            string memory shareName,
-            string memory shareSymbol,
-            string memory positionName,
-            string memory positionSymbol,
-            uint256 targetValue,
-            uint256 totalInstallments,
-            uint256 startTime,
-            uint256 timePerRound,
-            uint256 numRounds,
-            uint256 numUsers,
-            uint16 exitFeeBps,
-            uint256 quotaCapEarly,
-            uint256 quotaCapMiddle,
-            uint256 quotaCapLate
-        ) = createArgs();
-
-        address vault = factory.createCircle("test-get-circle", shareName, shareSymbol, positionName, positionSymbol, targetValue, totalInstallments, startTime, timePerRound, numRounds, numUsers, exitFeeBps, quotaCapEarly, quotaCapMiddle, quotaCapLate, VRF, 1);
-        CircleVaultFactory.CircleInfo memory info = factory.getCircle(0);
+        CircleVaultFactory.CreateCircleParams memory p = createParams("test-get-circle");
+        address vault = factory.createCircle(p);
+        bytes32 circleId = CircleIdLib.compute(address(this), p.name, p.startTime, p.targetValue, p.totalInstallments, p.timePerRound, p.numRounds, p.numUsers, p.exitFeeBps, p.quotaCapEarly, p.quotaCapMiddle, p.quotaCapLate, p.vrfCoordinator, p.vrfSubscriptionId);
+        CircleVaultFactory.CircleInfo memory info = factory.getCircle(circleId);
 
         assertEq(info.vault, vault);
         assertTrue(info.shareToken != address(0));
@@ -312,29 +164,13 @@ contract CircleFactoryTest is Test {
     }
 
     function testCreateCircleFuzzy() public {
-        (
-            string memory name,
-            string memory shareName,
-            string memory shareSymbol,
-            string memory positionName,
-            string memory positionSymbol,
-            uint256 targetValue,
-            uint256 totalInstallments,
-            uint256 startTime,
-            uint256 timePerRound,
-            uint256 numRounds,
-            uint256 numUsers,
-            uint16 exitFeeBps,
-            uint256 quotaCapEarly,
-            uint256 quotaCapMiddle,
-            uint256 quotaCapLate
-        ) = createArgs();
-
-        address vault = factory.createCircle(name, shareName, shareSymbol, positionName, positionSymbol, targetValue, totalInstallments, startTime, timePerRound, numRounds, numUsers, exitFeeBps, quotaCapEarly, quotaCapMiddle, quotaCapLate, VRF, 1);
+        CircleVaultFactory.CreateCircleParams memory p = createParams();
+        address vault = factory.createCircle(p);
         assertTrue(vault != address(0));
         assertEq(factory.getCirclesCount(), 1);
 
-        CircleVaultFactory.CircleInfo memory info = factory.getCircle(0);
+        bytes32 circleId = CircleIdLib.compute(address(this), p.name, p.startTime, p.targetValue, p.totalInstallments, p.timePerRound, p.numRounds, p.numUsers, p.exitFeeBps, p.quotaCapEarly, p.quotaCapMiddle, p.quotaCapLate, p.vrfCoordinator, p.vrfSubscriptionId);
+        CircleVaultFactory.CircleInfo memory info = factory.getCircle(circleId);
         assertEq(info.vault, vault);
         assertTrue(info.shareToken != address(0));
         assertTrue(info.positionNft != address(0));

@@ -17,9 +17,6 @@ contract DrawConsumer is IDrawConsumer, Ownable {
     address public immutable vrfCoordinator;
     uint64 public immutable vrfSubscriptionId;
 
-    /// @notice The single CircleVault that can call requestDraw (one consumer per vault).
-    address public vault;
-
     /// @notice Pending participants for each request until VRF is fulfilled.
     mapping(uint256 => address[]) private _pendingParticipants;
 
@@ -40,24 +37,16 @@ contract DrawConsumer is IDrawConsumer, Ownable {
 
     constructor(
         address vrfCoordinator_,
-        uint64 vrfSubscriptionId_,
-        address vault_
+        uint64 vrfSubscriptionId_
     ) Ownable(msg.sender) {
         if (vrfCoordinator_ == address(0)) revert InvalidCoordinator();
         vrfCoordinator = vrfCoordinator_;
         vrfSubscriptionId = vrfSubscriptionId_;
-        vault = vault_;
-    }
-
-    /// @notice Set the vault that can request draws. Only callable by owner (e.g. factory) when vault was not set at deploy.
-    function setVault(address vault_) external onlyOwner {
-        if (vault_ == address(0)) revert VaultZero();
-        vault = vault_;
     }
 
     /// @inheritdoc IDrawConsumer
     function requestDraw(uint256 quotaId, address[] calldata participants) external override returns (uint256 requestId) {
-        if (msg.sender != vault) revert OnlyVault();
+        if (msg.sender != owner()) revert OnlyVault();
         if (participants.length == 0) revert EmptyParticipants();
 
         VRFV2PlusClient.RandomWordsRequest memory req = VRFV2PlusClient.RandomWordsRequest({

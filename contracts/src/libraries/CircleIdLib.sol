@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 library CircleIdLib {
     function compute(
         address creator,
-        string calldata name,
+        string memory name,
         uint256 startTime,
         uint256 targetValue,
         uint256 totalInstallments,

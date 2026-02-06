@@ -32,4 +32,5 @@ library CircleErrors {
     error InvalidQuota();
     error QuotaFull();
     error AlreadySettled();
+    error TransferFailed();
 }
