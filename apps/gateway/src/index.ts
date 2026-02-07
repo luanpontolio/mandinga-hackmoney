@@ -1,83 +1,61 @@
-import http from "node:http";
-import { URL } from "node:url";
+import express from "express";
+import type { Request, Response } from "express";
 import { handleGatewayRequest } from "./gateway";
 
 const port = Number(process.env.PORT ?? 8080);
 
-const server = http.createServer(async (req, res) => {
+const app = express();
+
+app.use(express.json({ limit: "1mb" }));
+app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
   if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
+    res.status(204).end();
     return;
   }
-
-  if (!req.url) {
-    res.writeHead(400);
-    res.end("Missing URL");
-    return;
-  }
-
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  if (url.pathname !== "/" && url.pathname !== "/ccip-read") {
-    res.writeHead(404);
-    res.end("Not found");
-    return;
-  }
-
-  try {
-    const { sender, data } = await parseRequest(req, url);
-    const responseData = await handleGatewayRequest({ sender, data });
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ data: responseData }));
-  } catch (error) {
-    res.writeHead(400, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: String(error) }));
-  }
+  next();
 });
 
-server.listen(port, () => {
+const handler = async (req: Request, res: Response) => {
+  try {
+    const { sender, data } = parseRequest(req);
+    const responseData = await handleGatewayRequest({ sender, data });
+    res.status(200).json({ data: responseData });
+  } catch (error) {
+    res.status(400).json({ error: String(error) });
+  }
+};
+
+app.get("/", handler);
+app.get("/ccip-read", handler);
+app.post("/", handler);
+app.post("/ccip-read", handler);
+
+app.use((_req, res) => {
+  res.status(404).send("Not found");
+});
+
+app.listen(port, () => {
   console.log(`Gateway listening on :${port}`);
 });
 
-async function parseRequest(req: http.IncomingMessage, url: URL) {
+function parseRequest(req: Request) {
   if (req.method === "GET") {
     return {
-      sender: url.searchParams.get("sender") ?? "",
-      data: url.searchParams.get("data") ?? "",
+      sender: typeof req.query?.sender === "string" ? req.query.sender : "",
+      data: typeof req.query?.data === "string" ? req.query.data : "",
     };
   }
 
   if (req.method === "POST") {
-    const body = await readJsonBody(req);
+    const body = req.body ?? {};
     return {
-      sender: typeof body?.sender === "string" ? body.sender : "",
-      data: typeof body?.data === "string" ? body.data : "",
+      sender: typeof body.sender === "string" ? body.sender : "",
+      data: typeof body.data === "string" ? body.data : "",
     };
   }
 
   throw new Error("Unsupported method");
-}
-
-function readJsonBody(req: http.IncomingMessage) {
-  return new Promise<Record<string, unknown>>((resolve, reject) => {
-    let raw = "";
-    req.on("data", (chunk) => {
-      raw += chunk;
-    });
-    req.on("end", () => {
-      if (!raw) {
-        resolve({});
-        return;
-      }
-      try {
-        resolve(JSON.parse(raw));
-      } catch (error) {
-        reject(error);
-      }
-    });
-  });
 }
