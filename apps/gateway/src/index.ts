@@ -28,9 +28,12 @@ const handler = async (req: Request, res: Response) => {
   }
 };
 
-app.get("/", handler);
+const healthCheck = async (req:Request, res:Response) => {
+  res.status(200).json({message: "OK"});
+}
+
+app.get("/", healthCheck);
 app.get("/ccip-read", handler);
-app.post("/", handler);
 app.post("/ccip-read", handler);
 
 app.use((_req, res) => {
