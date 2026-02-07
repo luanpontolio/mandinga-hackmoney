@@ -45,6 +45,16 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --compact-card-height: 200px;
+    --entry-early-default: 43 100% 39%;
+    --entry-early-hover: 43 100% 35%;
+    --entry-early-active: 43 100% 31%;
+    --entry-middle-default: 176 59% 45%;
+    --entry-middle-hover: 176 59% 40%;
+    --entry-middle-active: 176 59% 35%;
+    --entry-late-default: 239 100% 68%;
+    --entry-late-hover: 239 100% 63%;
+    --entry-late-active: 239 100% 58%;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -84,9 +94,10 @@ body {
 
 @layer base {
   * {
-    /* @apply (--border); */
+    border-color: hsl(var(--border));
   }
   body {
-    /* @apply (--background) (--foreground); */
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }

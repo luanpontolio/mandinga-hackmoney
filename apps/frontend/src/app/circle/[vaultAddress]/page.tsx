@@ -6,22 +6,48 @@ import { useVault, VaultProvider } from "../../../contexts/VaultContext";
 import { formatAddress, formatUsd } from "../../../utils";
 import { ArcCard } from "../../components/ArcCard";
 import { EnsCard } from "../../components/EnsCard";
+import { EntryStatusCard } from "../../components/EntryStatusCard";
 import { Header } from "../../components/Header";
-import { InstallmentCard } from "../../components/InstallmentCard";
 import { MembersCard } from "../../components/MembersCard";
 import { PaymentVisualizationCard } from "../../components/PaymentVisualizationCard";
 import { PayoutCard } from "../../components/PayoutCard";
+import { RedeemCard } from "../../components/RedeemCard";
 import { SlotsCard } from "../../components/SlotsCard";
 import { TimelineCard } from "../../components/TimelineCard";
 import { GRID_GAP } from "../../components/designTokens";
+import { useCircleEntrySelection } from "../../../shared/hooks/useCircleEntrySelection";
+import { useCurrentQuotaId } from "../../../shared/hooks/useCurrentQuotaId";
+import { useRedeemFlow } from "../../../shared/hooks/useRedeemFlow";
+import { getAddress } from "viem";
 
 const formatDate = (date: Date | null) => {
   if (!date || Number.isNaN(date.getTime())) return "--";
   return date.toLocaleDateString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
     month: "long",
     day: "numeric",
     year: "numeric",
   });
+};
+
+const formatWindowRange = (start: Date | null, end: Date | null) => {
+  if (!start || !end) return "--";
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "--";
+  const startLabel = start.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const endLabel = end.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${startLabel} - ${endLabel}`;
 };
 
 const getStatusLabel = (startDate: Date | null, endDate: Date | null) => {
@@ -32,24 +58,46 @@ const getStatusLabel = (startDate: Date | null, endDate: Date | null) => {
   return "Active";
 };
 
-function CircleDetailContent() {
-  const { isConnected } = useUser();
-  const { loading, error, summary, participants, tokenId, paidInstallments } =
-    useVault();
 
+function CircleDetailContent() {
+  const { isConnected, fullAddress } = useUser();
+  console.log("fullAddress", fullAddress);
+  const {
+    loading,
+    error,
+    summary,
+    participants,
+    tokenId,
+    positionQuotaId,
+    paidInstallments,
+  } = useVault();
   const hasJoined = tokenId > 0n;
+  const {
+    selectedEntry,
+    setSelectedEntry,
+    hoveredEntry,
+    setHoveredEntry,
+    lockedEntryId,
+  } = useCircleEntrySelection({
+    isConnected,
+    hasJoined,
+    positionQuotaId,
+  });
 
   const {
     amountLabel,
     title,
     startDateLabel,
     endDateLabel,
-    statusLabel,
+    statusLabel: baseStatusLabel,
     slotsLeftLabel,
     arcscanUrl,
     installmentAmountLabel,
     totalRounds,
     totalInstallments,
+    entryCounts,
+    entryDescriptions,
+    windowDates,
   } = useMemo(() => {
     if (!summary) {
       return {
@@ -63,14 +111,16 @@ function CircleDetailContent() {
         installmentAmountLabel: "--",
         totalRounds: 0,
         totalInstallments: 0,
+        entryCounts: { early: 0, middle: 0, late: 0 },
+        entryDescriptions: { early: "--", middle: "--", late: "--" },
+        windowDates: null,
       };
     }
 
     const startDate = new Date(summary.startTime);
-    const endDate = new Date(
-      startDate.getTime() +
-        Number(summary.timePerRound) * Number(summary.numberOfRounds) * 1000
-    );
+    const closeWindowEarly = new Date(summary.closeWindowEarly);
+    const closeWindowMiddle = new Date(summary.closeWindowMiddle);
+    const endDate = new Date(summary.closeWindowLate);
     const slotsLeft = Math.max(
       Number(summary.numUsers) - Number(summary.activeParticipantCount),
       0
@@ -89,11 +139,59 @@ function CircleDetailContent() {
       installmentAmountLabel: formatUsd(summary.installmentAmount),
       totalRounds: Number(summary.numberOfRounds),
       totalInstallments: Number(summary.totalInstallments),
+      entryCounts: {
+        early: Math.max(0, Number(summary.quotaCapEarly)),
+        middle: Math.max(0, Number(summary.quotaCapMiddle)),
+        late: Math.max(0, Number(summary.quotaCapLate)),
+      },
+      entryDescriptions: {
+        early: formatWindowRange(startDate, closeWindowEarly),
+        middle: formatWindowRange(closeWindowEarly, closeWindowMiddle),
+        late: formatWindowRange(closeWindowMiddle, endDate),
+      },
+      windowDates: {
+        startDate,
+        closeWindowEarly,
+        closeWindowMiddle,
+        closeWindowLate: endDate,
+      },
     };
   }, [summary]);
 
+  const fallbackQuotaId = useCurrentQuotaId(windowDates);
+  const currentQuotaId =
+    hasJoined && positionQuotaId !== null ? positionQuotaId : fallbackQuotaId;
+
+  const normalizedBaseStatus = baseStatusLabel.toUpperCase();
+  const canShowJoined =
+    normalizedBaseStatus !== "ENDED" &&
+    normalizedBaseStatus !== "CLOSED" &&
+    normalizedBaseStatus !== "FROZEN";
+  const {
+    drawCompleted,
+    windowSettled,
+    potShare,
+    redeemError,
+    isRedeeming,
+    handleRedeem,
+    isWinner,
+  } = useRedeemFlow({
+    vaultAddress: summary?.vaultAddress ?? null,
+    currentQuotaId,
+    walletAddress: fullAddress ?? null,
+  });
+  const statusLabel = isWinner
+    ? "Winner"
+    : hasJoined && canShowJoined
+      ? "Joined"
+      : baseStatusLabel;
   const currentInstallment = hasJoined ? Number(paidInstallments) : 0;
   const members = participants.map((participant) => formatAddress(participant));
+  const potLabel = potShare !== null ? formatUsd(potShare) : "--";
+  
+  console.log("isWinner", isWinner);
+  console.log("drawCompleted", drawCompleted);
+  console.log("windowSettled", windowSettled);
 
   if (loading) {
     return (
@@ -111,6 +209,8 @@ function CircleDetailContent() {
     );
   }
 
+  const joinHref = `/circle/${summary.vaultAddress}/join`;
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header
@@ -125,41 +225,62 @@ function CircleDetailContent() {
             monthlyAmountLabel={installmentAmountLabel}
             totalMonths={totalInstallments}
             currentMonth={currentInstallment}
-            earlyEntryLabel="--"
+            isWalletConnected={isConnected}
+            selectedEntry={selectedEntry}
+            joinHref={joinHref}
+            statusLabel={statusLabel}
+          />
+          <EntryStatusCard
+            isWalletConnected={isConnected}
+            selectedEntry={selectedEntry}
+            hoveredEntry={hoveredEntry}
+            onSelectEntry={setSelectedEntry}
+            onHoverEntry={setHoveredEntry}
+            lockedEntryId={lockedEntryId}
+            entryCounts={entryCounts}
+            entryDescriptions={entryDescriptions}
           />
           <TimelineCard startDate={startDateLabel} endDate={endDateLabel} />
           <PayoutCard
             isWalletConnected={isConnected}
-            hasJoined={hasJoined}
-            currentRound={currentInstallment}
-            totalRounds={totalRounds}
-            amountLabel={amountLabel}
-            dueLabel="--"
+            hasJoined={false}
+            currentRound={0}
+            totalRounds={0}
+            windowDates={windowDates}
+            selectedEntry={selectedEntry}
+            hoveredEntry={hoveredEntry}
+            onSelectEntry={setSelectedEntry}
+            onHoverEntry={setHoveredEntry}
+            entryCounts={entryCounts}
           />
-          <InstallmentCard
-            isWalletConnected={isConnected}
-            hasJoined={hasJoined}
-            currentInstallment={currentInstallment}
-            totalInstallments={totalInstallments}
-            amountLabel={installmentAmountLabel}
-            dueLabel="--"
-          />
+          {isWinner && (
+            <RedeemCard
+              isWalletConnected={isConnected}
+              isWinner={isWinner}
+              drawCompleted={drawCompleted}
+              windowSettled={windowSettled}
+              potLabel={potLabel}
+              isSubmitting={isRedeeming}
+              error={redeemError}
+              onRedeem={handleRedeem}
+            />
+          )}
           <EnsCard ensName="--" ensUrl={null} />
           <MembersCard members={members} />
-          <ArcCard arcscanUrl={arcscanUrl} />
         </div>
 
         <div
           className="hidden md:grid lg:hidden gap-4"
           style={{
             gridTemplateColumns: "1fr 1fr",
-            gridTemplateRows: "auto auto auto auto auto",
+            gridTemplateRows: "auto auto auto auto auto auto",
             gridTemplateAreas: `
             "slots slots"
             "payment payment"
+            "entry entry"
             "timeline ens"
-            "payout installment"
-            "members arc"
+            "payout members"
+            "arc arc"
           `,
           }}
         >
@@ -174,7 +295,22 @@ function CircleDetailContent() {
               monthlyAmountLabel={installmentAmountLabel}
               totalMonths={totalInstallments}
               currentMonth={currentInstallment}
-              earlyEntryLabel="--"
+              isWalletConnected={isConnected}
+              selectedEntry={selectedEntry}
+              joinHref={joinHref}
+              statusLabel={statusLabel}
+            />
+          </div>
+          <div style={{ gridArea: "entry" }}>
+            <EntryStatusCard
+              isWalletConnected={isConnected}
+              selectedEntry={selectedEntry}
+              hoveredEntry={hoveredEntry}
+              onSelectEntry={setSelectedEntry}
+              onHoverEntry={setHoveredEntry}
+              lockedEntryId={lockedEntryId}
+              entryCounts={entryCounts}
+              entryDescriptions={entryDescriptions}
             />
           </div>
           <div style={{ gridArea: "timeline" }}>
@@ -183,25 +319,31 @@ function CircleDetailContent() {
           <div style={{ gridArea: "ens" }}>
             <EnsCard ensName="--" ensUrl={null} />
           </div>
-          <div style={{ gridArea: "payout" }}>
+          <div style={{ gridArea: "payout" }} className="flex flex-col gap-4">
             <PayoutCard
               isWalletConnected={isConnected}
-              hasJoined={hasJoined}
-              currentRound={currentInstallment}
-              totalRounds={totalRounds}
-              amountLabel={amountLabel}
-              dueLabel="--"
+              hasJoined={false}
+              currentRound={0}
+              totalRounds={0}
+              windowDates={windowDates}
+              selectedEntry={selectedEntry}
+              hoveredEntry={hoveredEntry}
+              onSelectEntry={setSelectedEntry}
+              onHoverEntry={setHoveredEntry}
+              entryCounts={entryCounts}
             />
-          </div>
-          <div style={{ gridArea: "installment" }}>
-            <InstallmentCard
-              isWalletConnected={isConnected}
-              hasJoined={hasJoined}
-              currentInstallment={currentInstallment}
-              totalInstallments={totalInstallments}
-              amountLabel={installmentAmountLabel}
-              dueLabel="--"
-            />
+            {isWinner && (
+              <RedeemCard
+                isWalletConnected={isConnected}
+                isWinner={isWinner}
+                drawCompleted={drawCompleted}
+                windowSettled={windowSettled}
+                potLabel={potLabel}
+                isSubmitting={isRedeeming}
+                error={redeemError}
+                onRedeem={handleRedeem}
+              />
+            )}
           </div>
           <div style={{ gridArea: "members" }}>
             <MembersCard members={members} />
@@ -214,31 +356,38 @@ function CircleDetailContent() {
         <div
           className={`hidden lg:grid ${GRID_GAP} w-full`}
           style={{
-            gridTemplateColumns: "1fr 1fr 1fr",
+            gridTemplateColumns: "1fr 1.5fr 1fr",
             gridTemplateRows: "auto",
             alignContent: "start",
             alignItems: "start",
           }}
         >
           <div className={`flex flex-col ${GRID_GAP}`}>
-            <SlotsCard statusLabel={statusLabel} slotsLeftLabel={slotsLeftLabel} />
             <TimelineCard startDate={startDateLabel} endDate={endDateLabel} />
             <PayoutCard
               isWalletConnected={isConnected}
-              hasJoined={hasJoined}
-              currentRound={currentInstallment}
-              totalRounds={totalRounds}
-              amountLabel={amountLabel}
-              dueLabel="--"
+              hasJoined={false}
+              currentRound={0}
+              totalRounds={0}
+              windowDates={windowDates}
+              selectedEntry={selectedEntry}
+              hoveredEntry={hoveredEntry}
+              onSelectEntry={setSelectedEntry}
+              onHoverEntry={setHoveredEntry}
+              entryCounts={entryCounts}
             />
-            <InstallmentCard
-              isWalletConnected={isConnected}
-              hasJoined={hasJoined}
-              currentInstallment={currentInstallment}
-              totalInstallments={totalInstallments}
-              amountLabel={installmentAmountLabel}
-              dueLabel="--"
-            />
+            {isWinner && (
+              <RedeemCard
+                isWalletConnected={isConnected}
+                isWinner={isWinner}
+                drawCompleted={drawCompleted}
+                windowSettled={windowSettled}
+                potLabel={potLabel}
+                isSubmitting={isRedeeming}
+                error={redeemError}
+                onRedeem={handleRedeem}
+              />
+            )}
           </div>
 
           <div className={`flex flex-col ${GRID_GAP}`}>
@@ -246,14 +395,28 @@ function CircleDetailContent() {
               monthlyAmountLabel={installmentAmountLabel}
               totalMonths={totalInstallments}
               currentMonth={currentInstallment}
-              earlyEntryLabel="--"
+              isWalletConnected={isConnected}
+              selectedEntry={selectedEntry}
+              joinHref={joinHref}
+              statusLabel={statusLabel}
             />
-            <ArcCard arcscanUrl={arcscanUrl} />
+            <EntryStatusCard
+              isWalletConnected={isConnected}
+              selectedEntry={selectedEntry}
+              hoveredEntry={hoveredEntry}
+              onSelectEntry={setSelectedEntry}
+              onHoverEntry={setHoveredEntry}
+              lockedEntryId={lockedEntryId}
+              entryCounts={entryCounts}
+              entryDescriptions={entryDescriptions}
+            />
           </div>
 
           <div className={`flex flex-col ${GRID_GAP}`}>
-            <EnsCard ensName="--" ensUrl={null} />
+            <SlotsCard statusLabel={statusLabel} slotsLeftLabel={slotsLeftLabel} />
             <MembersCard members={members} />
+            <EnsCard ensName="--" ensUrl={null} />
+            <ArcCard arcscanUrl={arcscanUrl} />
           </div>
         </div>
       </main>

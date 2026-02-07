@@ -46,6 +46,13 @@ export const vaultAbi = [
   },
   {
     type: "function",
+    name: "shareToken",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
     name: "numberOfRounds",
     stateMutability: "view",
     inputs: [],
@@ -81,6 +88,20 @@ export const vaultAbi = [
   },
   {
     type: "function",
+    name: "closeWindowEarly",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "closeWindowMiddle",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
     name: "timePerRound",
     stateMutability: "view",
     inputs: [],
@@ -88,7 +109,84 @@ export const vaultAbi = [
   },
   {
     type: "function",
+    name: "closeWindowLate",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "getCloseWindowTimestamp",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "windowSnapshotted",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "windowSettled",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "drawCompleted",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "windowSnapshotBalance",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }, { type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "getDrawOrder",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [{ type: "address[]" }],
+  },
+  {
+    type: "function",
+    name: "getWindowPotShare",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
     name: "activeParticipantCount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "quotaCapEarly",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "quotaCapMiddle",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "quotaCapLate",
     stateMutability: "view",
     inputs: [],
     outputs: [{ type: "uint256" }],
@@ -150,6 +248,13 @@ export const vaultAbi = [
     inputs: [],
     outputs: [],
   },
+  {
+    type: "function",
+    name: "redeem",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "uint256" }],
+    outputs: [],
+  },
 ] as const;
 
 export const positionNftAbi = [
@@ -184,8 +289,14 @@ export type VaultSummary = {
   installmentAmount: bigint;
   exitFeeBps: number;
   startTime: string;
+  closeWindowEarly: string;
+  closeWindowMiddle: string;
   timePerRound: bigint;
+  closeWindowLate: string;
   activeParticipantCount: bigint;
+  quotaCapEarly: bigint;
+  quotaCapMiddle: bigint;
+  quotaCapLate: bigint;
   snapshotBalance: bigint;
 };
 
@@ -230,9 +341,15 @@ export class Vault {
       totalInstallments,
       installmentAmount,
       startTime,
+      closeWindowEarly,
+      closeWindowMiddle,
       exitFeeBps,
       timePerRound,
+      closeWindowLate,
       activeParticipantCount,
+      quotaCapEarly,
+      quotaCapMiddle,
+      quotaCapLate,
       snapshotBalance,
     ] =
       await this.client.multicall({
@@ -272,9 +389,27 @@ export class Vault {
             abi: vaultAbi,
             functionName: "startTime",
           },
+          {
+            address: this.address,
+            abi: vaultAbi,
+            functionName: "closeWindowEarly",
+          },
+          {
+            address: this.address,
+            abi: vaultAbi,
+            functionName: "closeWindowMiddle",
+          },
           { address: this.address, abi: vaultAbi, functionName: "exitFeeBps" },
           { address: this.address, abi: vaultAbi, functionName: "timePerRound" },
+          {
+            address: this.address,
+            abi: vaultAbi,
+            functionName: "closeWindowLate",
+          },
           { address: this.address, abi: vaultAbi, functionName: "activeParticipantCount" },
+          { address: this.address, abi: vaultAbi, functionName: "quotaCapEarly" },
+          { address: this.address, abi: vaultAbi, functionName: "quotaCapMiddle" },
+          { address: this.address, abi: vaultAbi, functionName: "quotaCapLate" },
           { address: this.address, abi: vaultAbi, functionName: "snapshotBalance" },
         ],
         allowFailure: false,
@@ -290,8 +425,14 @@ export class Vault {
       installmentAmount,
       exitFeeBps: Number(exitFeeBps),
       startTime: new Date(Number(startTime) * 1000).toISOString(),
+      closeWindowEarly: new Date(Number(closeWindowEarly) * 1000).toISOString(),
+      closeWindowMiddle: new Date(Number(closeWindowMiddle) * 1000).toISOString(),
       timePerRound,
+      closeWindowLate: new Date(Number(closeWindowLate) * 1000).toISOString(),
       activeParticipantCount,
+      quotaCapEarly,
+      quotaCapMiddle,
+      quotaCapLate,
       snapshotBalance,
     };
   }

@@ -14,7 +14,7 @@ type CircleGridProps = {
 
 export function CircleGrid({
   totalDots = 24,
-  filledDot = 0,
+  filledDot = 1,
   earlyEntryDots = [],
   dotSize = 32,
   baseGap = 10,

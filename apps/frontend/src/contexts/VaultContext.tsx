@@ -40,6 +40,7 @@ type VaultContextValue = {
   quota: string;
   setQuota: (value: string) => void;
   tokenId: bigint;
+  positionQuotaId: number | null;
   paidInstallments: bigint;
   step: Step;
   signature: string | null;
@@ -72,6 +73,7 @@ export function VaultProvider({
   const [participants, setParticipants] = useState<Address[]>([]);
   const [quota, setQuota] = useState("0");
   const [tokenId, setTokenId] = useState<bigint>(0n);
+  const [positionQuotaId, setPositionQuotaId] = useState<number | null>(null);
   const [paidInstallments, setPaidInstallments] = useState<bigint>(0n);
   const [step, setStep] = useState<Step>("idle");
   const [signature, setSignature] = useState<string | null>(null);
@@ -135,14 +137,21 @@ export function VaultProvider({
             abi: positionNftAbi,
             functionName: "getPosition",
             args: [normalizedTokenId],
-          })) as { paidInstallments?: bigint };
+          })) as { paidInstallments?: bigint; quotaId?: bigint };
           setPaidInstallments(position.paidInstallments ?? 0n);
+          if (typeof position.quotaId === "bigint") {
+            setPositionQuotaId(Number(position.quotaId));
+          } else {
+            setPositionQuotaId(null);
+          }
         } else {
           setPaidInstallments(0n);
+          setPositionQuotaId(null);
         }
       } else {
         setTokenId(0n);
         setPaidInstallments(0n);
+        setPositionQuotaId(null);
       }
     } catch (err) {
       setError(
@@ -349,6 +358,7 @@ export function VaultProvider({
       quota,
       setQuota,
       tokenId,
+      positionQuotaId,
       paidInstallments,
       step,
       signature,
@@ -371,6 +381,7 @@ export function VaultProvider({
       participants,
       quota,
       tokenId,
+      positionQuotaId,
       paidInstallments,
       step,
       signature,

@@ -41,7 +41,7 @@ export function InstallmentCard({
 
         <div className="flex items-center justify-between">
           <span className="font-semibold text-[#1A1A1A]">
-            Always due on {dueLabel}, every month
+            Always due on the {dueLabel}, every month
           </span>
           <span className="font-semibold text-[#1A1A1A] whitespace-nowrap">
             {amountLabel}
@@ -72,7 +72,7 @@ export function InstallmentCard({
 
       <div className="flex items-center justify-between">
         <span className="font-semibold text-[#1A1A1A]">
-          Always due on {dueLabel}, every month
+          Always due on the {dueLabel}, every month
         </span>
         <span className="font-semibold text-[#1A1A1A] whitespace-nowrap">
           {amountLabel}

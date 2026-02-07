@@ -3,24 +3,17 @@
 import { useUser } from "../contexts/UserContext";
 
 export function ConnectButton() {
-  const { isConnected, address, connect, disconnect, balanceFormatted } =
-    useUser();
+  const { isConnected, address, connect, disconnect } = useUser();
 
   if (isConnected) {
     return (
-      <div className="flex items-center gap-3">
-        {balanceFormatted && (
-          <span className="text-muted-foreground text-sm">
-            {balanceFormatted}
-          </span>
-        )}
-        <span className="font-mono text-sm">{address}</span>
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => void disconnect()}
-          className="rounded-md border border-border bg-secondary px-3 py-1.5 text-sm text-secondary-foreground hover:bg-accent"
+          className="rounded-full border border-[#E5E5E5] px-3 py-1.5 text-xs font-medium text-[#1A1A1A] hover:bg-[#F5F5F5] md:px-4 md:py-2 md:text-sm"
         >
-          Disconnect
+          {address}
         </button>
       </div>
     );
@@ -30,9 +23,9 @@ export function ConnectButton() {
     <button
       type="button"
       onClick={connect}
-      className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90"
+      className="rounded-full border border-[#E5E5E5] px-4 py-1.5 text-sm font-medium text-[#1A1A1A] hover:bg-[#F5F5F5] bg-transparent md:px-6 md:py-2"
     >
-      Connect Wallet
+      Connect wallet
     </button>
   );
 }
