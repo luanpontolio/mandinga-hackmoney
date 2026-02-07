@@ -7,6 +7,10 @@
     "dev": "bun run src/index.ts",
     "build": "bun build src/index.ts --outdir dist"
   },
+  "engines": {
+    "node": ">=18",
+    "bun": ">=1.0.0"
+  },
   "dependencies": {
     "viem": "2.45.1"
   },
