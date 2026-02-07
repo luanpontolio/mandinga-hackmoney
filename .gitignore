@@ -16,7 +16,10 @@ contracts/broadcasts/
 *.log
 backend/out/
 backend/cache/
-frontend/.next/
+apps/frontend/.next/
+apps/frontend/node_modules/
+apps/frontend/dist/
+apps/frontend/.env
 specs/**
 .specify/**
 *.tsbuildinfo

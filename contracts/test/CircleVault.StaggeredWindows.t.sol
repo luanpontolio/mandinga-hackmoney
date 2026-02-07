@@ -3,15 +3,18 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "../src/CircleVaultFactory.sol";
+import "../src/CircleVaultFactoryDeployer.sol";
 import "../src/CircleVault.sol";
 import "../src/PositionNFT.sol";
 import "../src/ERC20Claim.sol";
 import "../src/mocks/VRFCoordinatorV2_5Mock.sol";
 import "../src/libraries/CircleError.sol";
+import "../src/libraries/CircleIdLib.sol";
 
 /// @title Tests for close-window-per-quota and snapshot per window (staggered payouts).
 contract CircleVaultStaggeredWindowsTest is Test {
     CircleVaultFactory factory;
+    CircleVaultFactoryDeployer deployer;
     VRFCoordinatorV2_5Mock vrfMock;
     address vault;
     address shareToken;
@@ -29,35 +32,35 @@ contract CircleVaultStaggeredWindowsTest is Test {
     uint256 constant QUOTA_LATE = 2;
 
     function setUp() public {
-        factory = new CircleVaultFactory();
+        deployer = new CircleVaultFactoryDeployer();
+        factory = new CircleVaultFactory(address(deployer));
         vrfMock = new VRFCoordinatorV2_5Mock();
         vrfSubId = vrfMock.createSubscription();
         vrfMock.fundSubscription(vrfSubId, 100e18);
         vm.deal(address(this), 100_000e18);
 
+        uint256 startTime = block.timestamp + 1;
+        CircleVaultFactory.CreateCircleParams memory p = CircleVaultFactory.CreateCircleParams({
+            name: "StaggeredCircle",
+            targetValue: TARGET,
+            totalInstallments: INSTALLMENTS,
+            startTime: startTime,
+            timePerRound: 7 days,
+            numRounds: NUM_USERS,
+            numUsers: NUM_USERS,
+            exitFeeBps: EXIT_FEE_BPS,
+            quotaCapEarly: QUOTA_EARLY,
+            quotaCapMiddle: QUOTA_MIDDLE,
+            quotaCapLate: QUOTA_LATE,
+            vrfCoordinator: address(vrfMock),
+            vrfSubscriptionId: vrfSubId
+        });
         vm.startPrank(creator);
-        vault = factory.createCircle(
-            "StaggeredCircle",
-            "StaggeredShare",
-            "SS",
-            "StaggeredPosition",
-            "SP",
-            TARGET,
-            INSTALLMENTS,
-            block.timestamp + 1,
-            7 days,
-            NUM_USERS,
-            NUM_USERS,
-            EXIT_FEE_BPS,
-            QUOTA_EARLY,
-            QUOTA_MIDDLE,
-            QUOTA_LATE,
-            address(vrfMock),
-            vrfSubId
-        );
+        vault = factory.createCircle(p);
         vm.stopPrank();
 
-        CircleVaultFactory.CircleInfo memory info = factory.getCircle(0);
+        bytes32 circleId = CircleIdLib.compute(creator, p.name, p.startTime, p.targetValue, p.totalInstallments, p.timePerRound, p.numRounds, p.numUsers, p.exitFeeBps, p.quotaCapEarly, p.quotaCapMiddle, p.quotaCapLate, p.vrfCoordinator, p.vrfSubscriptionId);
+        CircleVaultFactory.CircleInfo memory info = factory.getCircle(circleId);
         shareToken = info.shareToken;
         positionNft = info.positionNft;
         vrfMock.addConsumer(vrfSubId, info.drawConsumer);

@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./CircleVault.sol";
-import "./CircleDeployer.sol";
-import "./libraries/CircleIdLib.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import {CircleIdLib} from "./libraries/CircleIdLib.sol";
+import {CircleVaultFactoryDeployer} from "./CircleVaultFactoryDeployer.sol";
 
-contract CircleVaultFactory {
-    using CircleIdLib for *;
+contract CircleVaultFactory is Ownable {
+    CircleVaultFactoryDeployer public immutable deployer;
+
+    uint256 public circleCount;
+    mapping(bytes32 => CircleInfo) public circleInfoById;
+    mapping(bytes32 => address) public circleById;
 
     struct CircleInfo {
         bytes32 circleId;
@@ -16,10 +20,21 @@ contract CircleVaultFactory {
         address drawConsumer;
     }
 
-    CircleInfo[] public circles;
-    mapping(bytes32 => address) public circleById;
-
-    CircleDeployer public immutable deployer;
+    struct CreateCircleParams {
+        string name;
+        uint256 targetValue;
+        uint256 totalInstallments;
+        uint256 startTime;
+        uint256 timePerRound;
+        uint256 numRounds;
+        uint256 numUsers;
+        uint16 exitFeeBps;
+        uint256 quotaCapEarly;
+        uint256 quotaCapMiddle;
+        uint256 quotaCapLate;
+        address vrfCoordinator;
+        uint64 vrfSubscriptionId;
+    }
 
     event CircleCreated(
         address indexed vault,
@@ -29,120 +44,113 @@ contract CircleVaultFactory {
     );
 
     error CircleAlreadyExists();
+    error InvalidVrfCoordinator();
+    error InvalidVrfSubscriptionId();
+    error InvalidTimePerRound();
+    error InvalidStartTime();
+    error InvalidExitFee();
+    error InvalidTotalInstallments();
+    error InvalidRoundsUsers();
+    error InvalidQuotaCaps();
 
-    constructor() {
-        deployer = new CircleDeployer(address(this));
+    constructor(address _deployer) Ownable(msg.sender) {
+        deployer = CircleVaultFactoryDeployer(_deployer);
     }
 
-    function createCircle(
-        string calldata name,
-        string calldata shareName,
-        string calldata shareSymbol,
-        string calldata positionName,
-        string calldata positionSymbol,
-        uint256 targetValue,
-        uint256 totalInstallments,
-        uint256 startTime,
-        uint256 timePerRound,
-        uint256 numRounds,
-        uint256 numUsers,
-        uint16 exitFeeBps,
-        uint256 quotaCapEarly,
-        uint256 quotaCapMiddle,
-        uint256 quotaCapLate,
-        address vrfCoordinator,
-        uint64 vrfSubscriptionId
-    ) external returns (address vault) {
-        require(exitFeeBps <= 500, "exit fee too high");
-        require(totalInstallments > 0, "installments=0");
-        require(numUsers == numRounds, "users != rounds");
-        require(
-            quotaCapEarly + quotaCapMiddle + quotaCapLate == numUsers,
-            "quota caps mismatch"
+    function createCircle(CreateCircleParams calldata p) external returns (address vault) {
+        _validateCreateParams(p);
+
+        bytes32 circleId = _computeCircleId(p);
+        _ensureCircleDoesNotExist(circleId);
+
+        (
+            address deployedVault,
+            address shareToken,
+            address positionNft,
+            address drawConsumer
+        ) = deployer.deployCircle(
+            circleId,
+            p.name,
+            p.targetValue,
+            p.totalInstallments,
+            p.startTime,
+            p.timePerRound,
+            p.numRounds,
+            p.numUsers,
+            p.exitFeeBps,
+            p.quotaCapEarly,
+            p.quotaCapMiddle,
+            p.quotaCapLate,
+            p.vrfCoordinator,
+            p.vrfSubscriptionId,
+            msg.sender
         );
 
-        bytes32 circleId = CircleIdLib.compute(
-            msg.sender,
-            name,
-            startTime,
-            targetValue,
-            totalInstallments,
-            timePerRound,
-            numRounds,
-            numUsers,
-            exitFeeBps,
-            quotaCapEarly,
-            quotaCapMiddle,
-            quotaCapLate,
-            vrfCoordinator,
-            vrfSubscriptionId
-        );
+        vault = deployedVault;
+        _recordCircle(circleId, vault, shareToken, positionNft, drawConsumer);
 
-        if (circleById[circleId] != address(0)) {
-            revert CircleAlreadyExists();
-        }
-
-        address shareToken = deployer.deployShareToken(
-            keccak256(abi.encode(circleId, "SHARE")),
-            shareName,
-            shareSymbol
-        );
-
-        address positionNft = deployer.deployPositionNFT(
-            keccak256(abi.encode(circleId, "POSITION")),
-            positionName,
-            positionSymbol
-        );
-
-        address drawConsumer = deployer.deployDrawConsumer(
-            keccak256(abi.encode(circleId, "DRAW_CONSUMER")),
-            vrfCoordinator,
-            vrfSubscriptionId
-        );
-
-        CircleVault.CircleParams memory params = CircleVault.CircleParams({
-            name: name,
-            targetValue: targetValue,
-            totalInstallments: totalInstallments,
-            startTime: startTime,
-            timePerRound: timePerRound,
-            numRounds: numRounds,
-            numUsers: numUsers,
-            exitFeeBps: exitFeeBps,
-            shareToken: shareToken,
-            positionNft: positionNft,
-            quotaCapEarly: quotaCapEarly,
-            quotaCapMiddle: quotaCapMiddle,
-            quotaCapLate: quotaCapLate,
-            drawConsumer: drawConsumer
-        });
-
-        vault = deployer.deployVault(circleId, params, msg.sender);
-
-        DrawConsumer(drawConsumer).setVault(vault);
-        ERC20Claim(shareToken).transferOwnership(vault);
-        PositionNFT(positionNft).transferOwnership(vault);
-
-        circleById[circleId] = vault;
-
-        circles.push(
-            CircleInfo({
-                circleId: circleId,
-                vault: vault,
-                shareToken: shareToken,
-                positionNft: positionNft,
-                drawConsumer: drawConsumer
-            })
-        );
-
-        emit CircleCreated(vault, msg.sender, circleId, name);
+        emit CircleCreated(vault, msg.sender, circleId, p.name);
     }
 
-    function getCircle(uint256 index) external view returns (CircleInfo memory) {
-        return circles[index];
+    function getCircle(bytes32 circleId) external view returns (CircleInfo memory) {
+        return circleInfoById[circleId];
     }
 
     function getCirclesCount() external view returns (uint256) {
-        return circles.length;
+        return circleCount;
+    }
+
+    function _validateCreateParams(CreateCircleParams calldata p) internal view {
+        if (p.vrfCoordinator == address(0)) revert InvalidVrfCoordinator();
+        if (p.vrfSubscriptionId == 0) revert InvalidVrfSubscriptionId();
+        if (p.timePerRound == 0) revert InvalidTimePerRound();
+        if (p.startTime <= block.timestamp) revert InvalidStartTime();
+        if (p.exitFeeBps > 500) revert InvalidExitFee();
+        if (p.totalInstallments == 0) revert InvalidTotalInstallments();
+        if (p.numUsers != p.numRounds) revert InvalidRoundsUsers();
+        if (p.quotaCapEarly + p.quotaCapMiddle + p.quotaCapLate != p.numUsers) {
+            revert InvalidQuotaCaps();
+        }
+    }
+
+    function _computeCircleId(CreateCircleParams calldata p) internal view returns (bytes32) {
+        return CircleIdLib.compute(
+            msg.sender,
+            p.name,
+            p.startTime,
+            p.targetValue,
+            p.totalInstallments,
+            p.timePerRound,
+            p.numRounds,
+            p.numUsers,
+            p.exitFeeBps,
+            p.quotaCapEarly,
+            p.quotaCapMiddle,
+            p.quotaCapLate,
+            p.vrfCoordinator,
+            p.vrfSubscriptionId
+        );
+    }
+
+    function _ensureCircleDoesNotExist(bytes32 circleId) internal view {
+        if (circleById[circleId] != address(0)) revert CircleAlreadyExists();
+    }
+
+    function _recordCircle(
+        bytes32 circleId,
+        address vault,
+        address shareToken,
+        address positionNft,
+        address drawConsumer
+    ) internal {
+        circleById[circleId] = vault;
+        circleCount++;
+        circleInfoById[circleId] = CircleInfo({
+            circleId: circleId,
+            vault: vault,
+            shareToken: shareToken,
+            positionNft: positionNft,
+            drawConsumer: drawConsumer
+        });
     }
 }
