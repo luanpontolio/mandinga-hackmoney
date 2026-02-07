@@ -11,16 +11,16 @@ contract CreateCircleScript is Script {
         uint256 pk = vm.envUint("PRIVATE_KEY");
 
         // 🔧 Circle params (native token = USDC 18 decimals on Arc testnet)
-        string memory name = "Trip to Bali";
+        string memory name = "Trip to Barcelona 2026";
         uint256 targetValue = 10 ether;
         uint256 totalInstallments = 10;
-        uint256 startTime = block.timestamp + 1 hours;
-        uint256 timePerRound = 10 minutes;
+        uint256 startTime = block.timestamp + 5 minutes;
+        uint256 timePerRound = 3 minutes;
         uint256 numRounds = 10;
         uint256 numUsers = 10;
-        uint16 exitFeeBps = 500; // 5%
-        uint256 quotaCapEarly = 4;
-        uint256 quotaCapMiddle = 3;
+        uint16 exitFeeBps = 400; // 5%
+        uint256 quotaCapEarly = 3;
+        uint256 quotaCapMiddle = 4;
         uint256 quotaCapLate = 3;
 
         // For testnet set VRF_COORDINATOR and VRF_SUBSCRIPTION_ID; for local use placeholder (deploy VRFCoordinatorV2_5Mock and pass if needed).
