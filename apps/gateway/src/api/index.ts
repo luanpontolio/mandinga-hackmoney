@@ -1,14 +1,10 @@
 import { Elysia } from "elysia";
-import {
-  CcipReadRequest,
-  handleCcipReadRequest
-} from "../controllers/ccip-read.controller.js";
+import { CcipReadRequest, handleCcipReadRequest } from "../controllers/ccip-read.controller.js";
 
 const app = new Elysia();
 
 app.get("/", () => ({ status: "ok" }));
 app.get("/health", () => ({ status: "ok" }));
-
 app.get("/ccip-read", async ({ query, set }) => {
   try {
     set.status = 200;
@@ -19,22 +15,10 @@ app.get("/ccip-read", async ({ query, set }) => {
   }
 });
 
-app.post("/ccip-read", async ({ body, set }) => {
-  try {
-    set.status = 200;
-    return await handleCcipReadRequest((body ?? {}) as CcipReadRequest);
-  } catch (error) {
-    set.status = 400;
-    return { error: String(error) };
-  }
-});
+// Start the server
+const port = process.env.PORT || 3000;
+app.listen(port);
 
-app.all("*", ({ set }) => {
-  set.status = 404;
-  return { error: "Not found" };
-});
+console.log(`🦊 Elysia server running on port ${port}`);
 
-/**
- * ✅ THIS IS THE ONLY EXPORT VERCEL NEEDS
- */
-export default app.fetch;
+export default app;
