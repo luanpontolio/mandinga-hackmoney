@@ -37,8 +37,13 @@ export function PaymentVisualizationCard({
     if (selectedEntry === "middle") return "hsl(var(--entry-middle-default))";
     return "hsl(var(--entry-late-default))";
   };
-  const isJoinDisabled = statusLabel !== "Active" && statusLabel !== "Joined";
   const hasPaidInstallment = paidInstallments > 0;
+  const hasRemainingInstallments =
+    hasJoined && safeTotalMonths > 0 && currentMonth < safeTotalMonths;
+  const isPayingInstallment = hasJoined && hasPaidInstallment;
+  const isJoinDisabled = isPayingInstallment
+    ? !hasRemainingInstallments
+    : statusLabel !== "Active" && statusLabel !== "Joined";
   const buttonLabel = hasJoined && hasPaidInstallment ? "Pay installment" : "Join";
 
   return (

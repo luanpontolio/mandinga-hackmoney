@@ -13,6 +13,7 @@ import {
   createPublicClient,
   createWalletClient,
   custom,
+  erc20Abi,
   http,
   type Address,
   type Hash,
@@ -43,6 +44,8 @@ type VaultContextValue = {
   tokenId: bigint;
   positionQuotaId: number | null;
   paidInstallments: bigint;
+  totalPaid: bigint;
+  claimTokenBalance: bigint;
   step: Step;
   signature: string | null;
   stepStatus: StepStatus;
@@ -77,6 +80,8 @@ export function VaultProvider({
   const [tokenId, setTokenId] = useState<bigint>(0n);
   const [positionQuotaId, setPositionQuotaId] = useState<number | null>(null);
   const [paidInstallments, setPaidInstallments] = useState<bigint>(0n);
+  const [totalPaid, setTotalPaid] = useState<bigint>(0n);
+  const [claimTokenBalance, setClaimTokenBalance] = useState<bigint>(0n);
   const [step, setStep] = useState<Step>("idle");
   const [signature, setSignature] = useState<string | null>(null);
   const [stepStatus, setStepStatus] = useState<StepStatus>(null);
@@ -119,11 +124,18 @@ export function VaultProvider({
       }
 
       if (fullAddress) {
-        const positionNft = await client.readContract({
-          address: normalizedVaultAddress,
-          abi: vaultAbi,
-          functionName: "positionNft",
-        });
+        const [positionNft, shareToken] = await Promise.all([
+          client.readContract({
+            address: normalizedVaultAddress,
+            abi: vaultAbi,
+            functionName: "positionNft",
+          }),
+          client.readContract({
+            address: normalizedVaultAddress,
+            abi: vaultAbi,
+            functionName: "shareToken",
+          }),
+        ]);
         const tokenIdValue = await client.readContract({
           address: normalizedVaultAddress,
           abi: vaultAbi,
@@ -139,8 +151,9 @@ export function VaultProvider({
             abi: positionNftAbi,
             functionName: "getPosition",
             args: [normalizedTokenId],
-          })) as { paidInstallments?: bigint; quotaId?: bigint };
+          })) as { paidInstallments?: bigint; quotaId?: bigint; totalPaid?: bigint };
           setPaidInstallments(position.paidInstallments ?? 0n);
+          setTotalPaid(position.totalPaid ?? 0n);
           if (typeof position.quotaId === "bigint") {
             setPositionQuotaId(Number(position.quotaId));
           } else {
@@ -148,12 +161,23 @@ export function VaultProvider({
           }
         } else {
           setPaidInstallments(0n);
+          setTotalPaid(0n);
           setPositionQuotaId(null);
         }
+
+        const balance = await client.readContract({
+          address: shareToken as Address,
+          abi: erc20Abi,
+          functionName: "balanceOf",
+          args: [fullAddress as Address],
+        });
+        setClaimTokenBalance(balance as bigint);
       } else {
         setTokenId(0n);
         setPaidInstallments(0n);
+        setTotalPaid(0n);
         setPositionQuotaId(null);
+        setClaimTokenBalance(0n);
       }
     } catch (err) {
       setError(
@@ -386,6 +410,8 @@ export function VaultProvider({
       tokenId,
       positionQuotaId,
       paidInstallments,
+      totalPaid,
+      claimTokenBalance,
       step,
       signature,
       stepStatus,
@@ -409,6 +435,8 @@ export function VaultProvider({
       tokenId,
       positionQuotaId,
       paidInstallments,
+      totalPaid,
+      claimTokenBalance,
       step,
       signature,
       stepStatus,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TermStep } from "../../../components/TermStep";
 import ReviewAndConfirmStep from "../../../components/ReviewAndConfirmStep";
@@ -20,6 +20,7 @@ function JoinContent({ vaultAddress }: { vaultAddress: string }) {
     stepStatus,
     stepError,
     isSubmitting,
+    flowMode,
     handleSignSiwe,
     handleCheckout,
   } = useVault();
@@ -27,6 +28,13 @@ function JoinContent({ vaultAddress }: { vaultAddress: string }) {
   const joinSummary = useJoinSummary(summary);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const router = useRouter();
+  const shouldShowTerms = !signature || flowMode === "pay";
+
+  useEffect(() => {
+    if (!shouldShowTerms && currentStep === 1) {
+      setCurrentStep(2);
+    }
+  }, [currentStep, setCurrentStep, shouldShowTerms]);
 
   if (loading) {
     return (
@@ -101,7 +109,7 @@ function JoinContent({ vaultAddress }: { vaultAddress: string }) {
           <JoinSuccessScreen circleSlug={summary.vaultAddress} />
         ) : (
           <>
-            {currentStep === 1 && (
+            {currentStep === 1 && shouldShowTerms && (
               <TermStep
                 monthlyAmount={formatUsd(summary.installmentAmount)}
                 totalMonths={Number(summary.totalInstallments)}
@@ -114,7 +122,7 @@ function JoinContent({ vaultAddress }: { vaultAddress: string }) {
                 }}
               />
             )}
-            {currentStep === 2 && (
+            {(currentStep === 2 || !shouldShowTerms) && (
               <ReviewAndConfirmStep
                 monthlyAmount={formatUsd(summary.installmentAmount)}
                 totalMonths={Number(summary.totalInstallments)}
