@@ -16,6 +16,17 @@ Participants receive capital first and repay over time.
 
 ---
 
+## Proof of Implementation
+
+- Smart Contracts: `/contracts`
+- VRF Consumer: `/contracts/DrawConsumer.sol`
+- ENS Resolver: `/contracts/MandingaResolver.sol`
+- Tests: `/test`
+- Frontend: `/frontend`
+
+---
+
+
 ## Overview
 
 Access to credit is essential for housing, education, work, travel, and life events.
@@ -364,18 +375,6 @@ The interface mirrors the protocol.
 /frontend      Web interface
 /scripts       Deployment tools
 
-
----
-
-## Proof of Implementation
-
-- Smart Contracts: `/contracts`
-- VRF Consumer: `/contracts/RandomnessConsumer.sol`
-- ENS Resolver: `/contracts/OffchainResolver.sol`
-- Tests: `/test`
-- Frontend: `/frontend`
-
-Deployment details available in `/docs/deployments.md`.
 
 ---
 
