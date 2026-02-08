@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "build": "bun run tsc",
     "start": "bun run src/api/index.ts",
     "dev": "bun run --watch src/api/index.ts"
   },
