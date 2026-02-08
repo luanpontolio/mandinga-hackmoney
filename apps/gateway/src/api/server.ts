@@ -5,6 +5,17 @@ import { loadRecords, upsertVaultRecord } from "../services/records-store.js";
 
 const app = new Elysia();
 
+app.onRequest(({ set }) => {
+  set.headers["access-control-allow-origin"] = "*";
+  set.headers["access-control-allow-methods"] = "GET,POST,OPTIONS";
+  set.headers["access-control-allow-headers"] = "content-type";
+});
+
+app.options("/*", ({ set }) => {
+  set.status = 204;
+  return "";
+});
+
 app.get("/", () => ({ status: "ok" }));
 app.get("/health", () => ({ status: "ok" }));
 app.get("/records", () => loadRecords());

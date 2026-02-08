@@ -35,7 +35,7 @@ export function List() {
   const [circles, setCircles] = useState<VaultSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const { getEnsNameForVault } = useEnsRecords();
+  const { recordsByAddress } = useEnsRecords();
 
   const client = useMemo(
     () =>
@@ -139,6 +139,7 @@ export function List() {
           middle: Math.max(0, Number(circle.quotaCapMiddle)),
           late: Math.max(0, Number(circle.quotaCapLate)),
         };
+        console.log("slots", slots);
         const slotsLeft = Math.max(
           Number(circle.numUsers) - Number(circle.activeParticipantCount),
           0
@@ -147,15 +148,13 @@ export function List() {
           circle.startTime,
           circle.closeWindowLate
         );
-        return {
-          circle,
-          slots,
-          slotsLeft,
-          statusLabel,
-          ensName: getEnsNameForVault(circle.vaultAddress),
-        };
+        console.log("statusLabel", statusLabel);
+        const ensName =
+          recordsByAddress.get(circle.vaultAddress.toLowerCase()) ?? null;
+        console.log("ensName", ensName);
+        return { circle, slots, slotsLeft, statusLabel, ensName };
       }),
-    [circles, getEnsNameForVault]
+    [circles, recordsByAddress]
   );
 
   const filteredCircles = useMemo(() => {

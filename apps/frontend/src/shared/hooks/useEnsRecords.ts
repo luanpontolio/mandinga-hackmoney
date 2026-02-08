@@ -15,6 +15,28 @@ type EnsRecordsState = {
   error: string | null;
 };
 
+const buildRecordsUrl = () => {
+  const gatewayUrl = "http://localhost:4000/records";
+  if (gatewayUrl) {
+    return gatewayUrl.endsWith("/records")
+      ? gatewayUrl
+      : `${gatewayUrl.replace(/\/$/, "")}/records`;
+  }
+
+  const resolverUrl = env.ensResolverUrl;
+  if (!resolverUrl) return null;
+  try {
+    const baseUrl = resolverUrl.startsWith("http")
+      ? new URL(resolverUrl)
+      : new URL(resolverUrl, window.location.origin);
+    baseUrl.pathname = "/records";
+    baseUrl.search = "";
+    return baseUrl.toString();
+  } catch {
+    return null;
+  }
+};
+
 export const useEnsRecords = () => {
   const [state, setState] = useState<EnsRecordsState>({
     records: {},
@@ -26,8 +48,12 @@ export const useEnsRecords = () => {
     let cancelled = false;
     const load = async () => {
       try {
-        const response = await fetch("http://0.0.0.0:4000/records");
-        console.log("response", await response.json());
+        const recordsUrl = buildRecordsUrl();
+        if (!recordsUrl) {
+          setState({ records: {}, isLoading: false, error: null });
+          return;
+        }
+        const response = await fetch(recordsUrl);
         if (!response.ok) {
           throw new Error("Failed to load ENS records.");
         }
@@ -67,6 +93,8 @@ export const useEnsRecords = () => {
     return map;
   }, [state.records]);
 
+  console.log("recordsByAddress", recordsByAddress);
+
   const getEnsNameForVault = (vaultAddress?: string | null) => {
     if (!vaultAddress) return null;
     const key = vaultAddress.toLowerCase();
@@ -78,5 +106,6 @@ export const useEnsRecords = () => {
     isLoading: state.isLoading,
     error: state.error,
     getEnsNameForVault,
+    recordsByAddress,
   };
 };
