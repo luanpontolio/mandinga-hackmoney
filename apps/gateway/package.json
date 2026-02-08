@@ -4,17 +4,24 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "bun run src/index.ts",
-    "build": "bun build src/index.ts --outdir dist"
+    "build": "bun run tsc",
+    "start": "node dist/api/index.js"
+  },
+  "engines": {
+    "node": "24.x",
+    "bun": ">=1.0.0"
   },
   "engines": {
     "node": ">=18",
     "bun": ">=1.0.0"
   },
   "dependencies": {
+    "@sinclair/typebox": "^0.34.48",
+    "elysia": "^1.4.22",
     "viem": "2.45.1"
   },
   "devDependencies": {
-    "@types/node": "^25.2.1"
+    "@types/node": "^25.2.1",
+    "typescript": "^5.9.2"
   }
 }
