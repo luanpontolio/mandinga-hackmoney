@@ -1,6 +1,6 @@
 "use client";
 
-import type { MouseEventHandler } from "react";
+import { useRef, type MouseEventHandler } from "react";
 import { totalMonths, type SlotsByWindow } from "./totalMonths";
 
 type EntryId = "early" | "middle" | "late";
@@ -29,8 +29,10 @@ const ENTRY_COLORS: Record<EntryId, string> = {
   late: "hsl(var(--entry-late-default))",
 };
 
-const BASE_RADIUS = 20;
-const RING_STEP = 4.5;
+// Increase base radius and step so rings dominate the card area (unscaled)
+const BASE_RADIUS = 28;
+// Reduce step so rings are closer together visually (tighter concentric rings)
+const RING_STEP = 3;
 
 const getRingRadius = (index: number) => BASE_RADIUS + index * RING_STEP;
 
@@ -60,29 +62,35 @@ export function Rings({
     if (index < earlyEnd) group = "early";
     else if (index < middleEnd) group = "middle";
 
-    let color = "#E5E5E5";
+    let color = "hsl(var(--border))";
     let opacity = 0.3;
 
     if (activeGroup && group === activeGroup) {
       color = ENTRY_COLORS[group];
       opacity = 1;
     } else if (!activeGroup && highlightFirst && index === 0) {
-      color = "#1A1A1A";
+      color = "hsl(var(--foreground))";
       opacity = 1;
     }
 
     return { index, color, opacity };
   });
 
-  const outerRadius = getRingRadius(total - 1);
+  // Compute raw radii and a scale factor so rings fill the available SVG area
+  const outerRadiusRaw = getRingRadius(Math.max(0, total - 1));
+  // target visual radius (close to viewBox half size) so rings touch card padding
+  const maxVisualRadius = 116; // viewBox center is 120, leave ~4px padding
+  // allow upscaling for few rings so grid fills the area; cap to avoid extreme scaling
+  const scale = outerRadiusRaw > 0 ? Math.min(2.0, maxVisualRadius / outerRadiusRaw) : 1;
+
+  const outerRadius = outerRadiusRaw * scale;
   const earlyRadius =
     normalizedSlots.early > 0
-      ? getRingRadius(normalizedSlots.early - 1) + RING_STEP / 2
+      ? (getRingRadius(normalizedSlots.early - 1) + RING_STEP / 2) * scale
       : 0;
   const middleRadius =
     normalizedSlots.middle > 0
-      ? getRingRadius(normalizedSlots.early + normalizedSlots.middle - 1) +
-        RING_STEP / 2
+      ? (getRingRadius(normalizedSlots.early + normalizedSlots.middle - 1) + RING_STEP / 2) * scale
       : 0;
 
   const handleSelect = (entry: EntryId) => {
@@ -90,11 +98,63 @@ export function Rings({
     onSelectEntry(entry);
   };
 
-  const handleHover =
-    (entry: EntryId | ""): MouseEventHandler<SVGCircleElement> =>
-    () => {
+  // Pointer-based detection settings derived from computed scale and radii
+  const DET_BASE = BASE_RADIUS * scale; // base detection radius
+  const DET_STEP = RING_STEP * scale; // detection step per ring
+  const DET_STROKE = 3 * scale; // stroke tolerance
+  const DET_MAX_INDEX = Math.max(0, total - 1); // max ring index for detection
+
+  const lastHoveredRef = useRef<EntryId | "">(hoveredEntry || "");
+
+  const mapDistanceToEntry = (distance: number): EntryId | "" => {
+    if (distance < DET_BASE - DET_STROKE) return "";
+    if (distance > DET_BASE + DET_MAX_INDEX * DET_STEP + DET_STROKE) return "";
+    let i = Math.round((distance - DET_BASE) / DET_STEP);
+    if (i < 0) i = 0;
+    if (i > DET_MAX_INDEX) i = DET_MAX_INDEX;
+    // Map low / mid / high indices to early/middle/late using proportional buckets
+    const ratio = i / Math.max(1, DET_MAX_INDEX);
+    if (ratio <= 0.33) return "early";
+    if (ratio <= 0.66) return "middle";
+    return "late";
+  };
+
+  const handleSvgPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    const svg = e.currentTarget as SVGSVGElement;
+    const rect = svg.getBoundingClientRect();
+    const vbW = 240;
+    const vbH = 240;
+    const scaleX = vbW / rect.width;
+    const scaleY = vbH / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    const distance = Math.hypot(x - vbW / 2, y - vbH / 2);
+    const entry = mapDistanceToEntry(distance);
+    if (entry !== lastHoveredRef.current) {
+      lastHoveredRef.current = entry;
       onHoverEntry?.(entry);
-    };
+    }
+  };
+
+  const handleSvgPointerLeave = () => {
+    lastHoveredRef.current = "";
+    onHoverEntry?.("");
+  };
+
+  const handleSvgClick = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (!onSelectEntry || !canSelect) return;
+    const svg = e.currentTarget as SVGSVGElement;
+    const rect = svg.getBoundingClientRect();
+    const vbW = 240;
+    const vbH = 240;
+    const scaleX = vbW / rect.width;
+    const scaleY = vbH / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    const distance = Math.hypot(x - vbW / 2, y - vbH / 2);
+    const entry = mapDistanceToEntry(distance);
+    if (entry) handleSelect(entry as EntryId);
+  };
 
   const entryItems = (Object.keys(ENTRY_LABELS) as EntryId[]).map((id) => ({
     id,
@@ -112,13 +172,16 @@ export function Rings({
           viewBox="0 0 240 240"
           preserveAspectRatio="xMidYMid meet"
           className="w-full h-full block"
+          onPointerMove={handleSvgPointerMove}
+          onPointerLeave={handleSvgPointerLeave}
+          onClick={handleSvgClick}
         >
           {rings.map((ring) => (
             <circle
               key={ring.index}
               cx="120"
               cy="120"
-              r={getRingRadius(ring.index)}
+              r={getRingRadius(ring.index) * scale}
               fill="none"
               stroke={ring.color}
               strokeWidth={3}
@@ -127,44 +190,7 @@ export function Rings({
             />
           ))}
 
-          {outerRadius > 0 && (
-            <circle
-              cx="120"
-              cy="120"
-              r={outerRadius + RING_STEP / 2}
-              fill="transparent"
-              className={onHoverEntry || onSelectEntry ? "cursor-pointer" : ""}
-              onMouseEnter={handleHover("late")}
-              onMouseLeave={handleHover("")}
-              onClick={() => handleSelect("late")}
-            />
-          )}
-
-          {middleRadius > 0 && (
-            <circle
-              cx="120"
-              cy="120"
-              r={middleRadius}
-              fill="transparent"
-              className={onHoverEntry || onSelectEntry ? "cursor-pointer" : ""}
-              onMouseEnter={handleHover("middle")}
-              onMouseLeave={handleHover("")}
-              onClick={() => handleSelect("middle")}
-            />
-          )}
-
-          {earlyRadius > 0 && (
-            <circle
-              cx="120"
-              cy="120"
-              r={earlyRadius}
-              fill="transparent"
-              className={onHoverEntry || onSelectEntry ? "cursor-pointer" : ""}
-              onMouseEnter={handleHover("early")}
-              onMouseLeave={handleHover("")}
-              onClick={() => handleSelect("early")}
-            />
-          )}
+          {/* Pointer-based ring band detection replaces the overlapping invisible circles */}
         </svg>
       </div>
 

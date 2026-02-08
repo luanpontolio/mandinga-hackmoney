@@ -5,6 +5,7 @@ import { createPublicClient, http, type Address } from "viem";
 import { arcTestnet } from "../lib/config";
 import { env } from "../lib/env";
 import { Card } from "./Card";
+import { Select } from "./ui/Select";
 import {
   Factory,
   Vault,
@@ -174,20 +175,21 @@ export function List() {
   } else if (!filteredCircles.length) {
     content = (
       <div className="text-center py-20">
-        <p className="text-sm text-[#999999]">No circles match your filters.</p>
+        <p className="text-sm text-muted-foreground">No circles match your filters.</p>
       </div>
     );
   } else {
     content = (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCircles.map(({ circle, slots, slotsLeft, statusLabel }) => (
-          <Card
-            key={circle.vaultAddress}
-            circle={circle}
-            slots={slots}
-            slotsLeft={slotsLeft}
-            statusLabel={statusLabel}
-          />
+          <div key={circle.vaultAddress} className="mx-auto w-full max-w-[360px]">
+            <Card
+              circle={circle}
+              slots={slots}
+              slotsLeft={slotsLeft}
+              statusLabel={statusLabel}
+            />
+          </div>
         ))}
       </div>
     );
@@ -196,25 +198,14 @@ export function List() {
   return (
     <div className="flex flex-col">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#1A1A1A] mb-2">Circles</h1>
-        <p className="text-sm text-[#666666]">
-          Browse available funding circles below.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-bold text-[#666666]">Status:</label>
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-            className="w-[140px] h-9 rounded-lg border border-[#E5E5E5] text-sm font-medium px-3 bg-white"
-          >
+        <div className="flex items-center gap-4 mb-2">
+          <label className="text-xs font-bold text-muted-foreground">Status:</label>
+          <Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}>
             <option value="all">All</option>
             <option value="active">Active</option>
             <option value="upcoming">Upcoming</option>
             <option value="ended">Ended</option>
-          </select>
+          </Select>
         </div>
       </div>
 

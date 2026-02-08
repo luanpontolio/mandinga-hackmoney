@@ -94,7 +94,7 @@ export function EntryStatusCard({
             } as CSSProperties}
           >
             <div className="flex justify-center shrink-0 xl:w-full">
-              <div className="grid grid-cols-4 gap-x-3 gap-y-3 xl:w-full xl:gap-x-3 xl:gap-y-3 xl:place-items-center">
+              <div className="grid grid-cols-4 gap-x-3 gap-y-3 place-items-center xl:w-full xl:gap-x-3 xl:gap-y-3">
                 {Array.from({ length: group.count }).map((_, i) => (
                   <div
                     key={i}
@@ -107,7 +107,7 @@ export function EntryStatusCard({
               </div>
             </div>
 
-            <div className="flex flex-col gap-0.5 items-start min-w-0 xl:items-center xl:text-center xl:gap-0.5">
+            <div className="flex flex-col gap-0.5 items-center min-w-0 text-center xl:gap-0.5">
               <span
                 className="font-semibold text-base xl:text-lg whitespace-nowrap leading-tight"
                 style={{ color: group.colorDefault }}
@@ -115,7 +115,7 @@ export function EntryStatusCard({
                 {group.label}
               </span>
               <p
-                className={`${TYPOGRAPHY.bodyMuted} text-sm leading-tight line-clamp-3 text-left xl:text-center xl:max-w-[220px]`}
+                className={`${TYPOGRAPHY.bodyMuted} text-sm leading-tight line-clamp-3 max-w-[220px]`}
               >
                 {group.description}
               </p>
