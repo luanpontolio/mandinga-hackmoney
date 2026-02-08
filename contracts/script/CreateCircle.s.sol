@@ -11,11 +11,11 @@ contract CreateCircleScript is Script {
         uint256 pk = vm.envUint("PRIVATE_KEY");
 
         // 🔧 Circle params (native token = USDC 18 decimals on Arc testnet)
-        string memory name = "Trip to Barcelona 2026";
+        string memory name = "Trip to Hawaii 2027";
         uint256 targetValue = 10 ether;
         uint256 totalInstallments = 10;
         uint256 startTime = block.timestamp + 5 minutes;
-        uint256 timePerRound = 3 minutes;
+        uint256 timePerRound = 30 minutes;
         uint256 numRounds = 10;
         uint256 numUsers = 10;
         uint16 exitFeeBps = 400; // 5%
