@@ -18,7 +18,7 @@ import { GRID_GAP } from "../../components/designTokens";
 import { useCircleEntrySelection } from "../../../shared/hooks/useCircleEntrySelection";
 import { useCurrentQuotaId } from "../../../shared/hooks/useCurrentQuotaId";
 import { useRedeemFlow } from "../../../shared/hooks/useRedeemFlow";
-import { useMandingaEnsName } from "../../../shared/hooks/useMandingaEnsName";
+import { useEnsRecords } from "../../../shared/hooks/useEnsRecords";
 import { getAddress } from "viem";
 
 const formatDate = (date: Date | null) => {
@@ -181,10 +181,12 @@ function CircleDetailContent() {
     currentQuotaId,
     walletAddress: fullAddress ?? null,
   });
-  const { ensName, ensUrl } = useMandingaEnsName({
-    vaultAddress: summary?.vaultAddress ?? null,
-    circleName: summary?.circleName ?? null,
-  });
+  const { getEnsNameForVault } = useEnsRecords();
+  const ensName = summary?.vaultAddress
+    ? getEnsNameForVault(summary.vaultAddress) ?? "--"
+    : "--";
+  const ensUrl =
+    ensName !== "--" ? `https://app.ens.domains/name/${ensName}` : null;
   const currentInstallment = hasJoined ? Number(paidInstallments) : 0;
   const hasRemainingInstallments =
     hasJoined &&

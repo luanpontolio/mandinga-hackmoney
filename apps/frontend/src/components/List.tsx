@@ -5,6 +5,7 @@ import { createPublicClient, http, type Address } from "viem";
 import { arcTestnet } from "../lib/config";
 import { env } from "../lib/env";
 import { Card } from "./Card";
+import { useEnsRecords } from "../shared/hooks/useEnsRecords";
 import {
   Factory,
   Vault,
@@ -34,6 +35,7 @@ export function List() {
   const [circles, setCircles] = useState<VaultSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const { getEnsNameForVault } = useEnsRecords();
 
   const client = useMemo(
     () =>
@@ -145,9 +147,15 @@ export function List() {
           circle.startTime,
           circle.closeWindowLate
         );
-        return { circle, slots, slotsLeft, statusLabel };
+        return {
+          circle,
+          slots,
+          slotsLeft,
+          statusLabel,
+          ensName: getEnsNameForVault(circle.vaultAddress),
+        };
       }),
-    [circles]
+    [circles, getEnsNameForVault]
   );
 
   const filteredCircles = useMemo(() => {
@@ -180,13 +188,14 @@ export function List() {
   } else {
     content = (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCircles.map(({ circle, slots, slotsLeft, statusLabel }) => (
+        {filteredCircles.map(({ circle, slots, slotsLeft, statusLabel, ensName }) => (
           <Card
             key={circle.vaultAddress}
             circle={circle}
             slots={slots}
             slotsLeft={slotsLeft}
             statusLabel={statusLabel}
+            ensName={ensName}
           />
         ))}
       </div>

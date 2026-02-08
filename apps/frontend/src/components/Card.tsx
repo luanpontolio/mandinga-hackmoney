@@ -14,6 +14,7 @@ type CardProps = {
   statusLabel: "Active" | "Upcoming" | "Ended";
   slotsLeft: number;
   slots: SlotsByWindow;
+  ensName?: string | null;
 };
 
 const STATUS_STYLES: Record<
@@ -31,7 +32,7 @@ const ENTRY_LABELS: Record<EntryId, string> = {
   late: "Late entry",
 };
 
-export function Card({ circle, statusLabel, slotsLeft, slots }: CardProps) {
+export function Card({ circle, statusLabel, slotsLeft, slots, ensName }: CardProps) {
   const [hoveredEntry, setHoveredEntry] = useState<EntryId | "">("");
   const statusStyle = STATUS_STYLES[statusLabel];
   const monthlyAmountLabel = formatUsd(circle.installmentAmount);
@@ -105,7 +106,7 @@ export function Card({ circle, statusLabel, slotsLeft, slots }: CardProps) {
 
       <div className="rounded-full bg-[#E3F2FD] px-4 py-2 w-full text-center">
         <span className="text-xs font-semibold text-[#1976D2]">
-          {formatAddress(circle.vaultAddress)}
+          {ensName || formatAddress(circle.vaultAddress)}
         </span>
       </div>
     </Link>

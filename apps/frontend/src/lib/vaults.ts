@@ -7,6 +7,7 @@ export type VaultEntry = {
   url?: string;
 };
 
+// Simulated the ENS Register
 export const VAULTS: VaultEntry[] = [
   { name: "devcon", vaultAddress: "0x7ff8D73E884a23cdC45294f1f7252C98FF09EBD1" },
   { name: "house", vaultAddress: "0xC6ab32bd721A8218b9A9b79f8b4e27fcAb950EbA" },

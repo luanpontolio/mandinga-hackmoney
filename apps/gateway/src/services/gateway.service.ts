@@ -13,6 +13,10 @@ type GatewayConfig = {
 
 let cachedConfig: GatewayConfig | null = null;
 
+export function invalidateGatewayConfig() {
+  cachedConfig = null;
+}
+
 export async function handleGatewayRequest({
   data,
 }: {
@@ -81,7 +85,7 @@ function getConfig(): GatewayConfig {
   }
 
   const recordsPath =
-    process.env.GATEWAY_RECORDS_PATH ?? "./records.json";
+    process.env.GATEWAY_RECORDS_PATH ?? "../../db/data.json";
   const resolvedPath = path.resolve(process.cwd(), recordsPath);
   const recordsData = JSON.parse(
     readFileSync(resolvedPath, { encoding: "utf8" })
