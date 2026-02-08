@@ -9,11 +9,7 @@
   },
   "engines": {
     "node": "24.x",
-    "bun": ">=1.0.0"
-  },
-  "engines": {
-    "node": ">=18",
-    "bun": ">=1.0.0"
+    "bun": ">=1.x"
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.48",
