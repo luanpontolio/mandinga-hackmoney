@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CheckoutStep } from "../../../components/CheckoutStep";
 import { PreviewStep } from "../../../components/PreviewStep";
 import { TermStep } from "../../../components/TermStep";
+import { SuccessStep } from "../../../components/SuccessStep";
 import { useVault, VaultProvider } from "../../../../contexts/VaultContext";
 import { formatUsd } from "../../../../utils";
 import { useJoinFlow } from "../../../../shared/hooks/useJoinFlow";
@@ -16,13 +17,15 @@ function JoinContent({ vaultAddress }: { vaultAddress: string }) {
     error,
     summary,
     signature,
+    stepStatus,
     stepError,
     isSubmitting,
     actionLabel,
+    flowMode,
     handleSignSiwe,
     handleCheckout,
   } = useVault();
-  const { currentStep, setCurrentStep } = useJoinFlow(signature);
+  const { currentStep, setCurrentStep } = useJoinFlow(signature, stepStatus);
   const joinSummary = useJoinSummary(summary);
 
   if (loading) {
@@ -68,7 +71,7 @@ function JoinContent({ vaultAddress }: { vaultAddress: string }) {
           <div className="hidden md:flex items-center gap-2 text-sm text-[#666666]">
             <span>Step</span>
             <span className="font-semibold text-[#1A1A1A]">
-              {currentStep}/3
+              {currentStep}/4
             </span>
           </div>
           <div className="hidden md:flex items-center gap-2 text-[#1A1A1A]">
@@ -102,6 +105,9 @@ function JoinContent({ vaultAddress }: { vaultAddress: string }) {
             stepError={stepError}
             onConfirm={handleCheckout}
           />
+        )}
+        {currentStep === 4 && (
+          <SuccessStep circleAddress={vaultAddress} flowMode={flowMode} />
         )}
       </main>
     </div>

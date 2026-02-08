@@ -11,6 +11,8 @@ type PaymentVisualizationCardProps = {
   selectedEntry: string;
   joinHref: string;
   statusLabel: string;
+  hasJoined: boolean;
+  paidInstallments: number;
 };
 
 export function PaymentVisualizationCard({
@@ -21,6 +23,8 @@ export function PaymentVisualizationCard({
   selectedEntry,
   joinHref,
   statusLabel,
+  hasJoined,
+  paidInstallments,
 }: PaymentVisualizationCardProps) {
   const safeTotalMonths = totalMonths > 0 ? totalMonths : 1;
   const progressPercentage = Math.max(
@@ -33,7 +37,9 @@ export function PaymentVisualizationCard({
     if (selectedEntry === "middle") return "hsl(var(--entry-middle-default))";
     return "hsl(var(--entry-late-default))";
   };
-  const isJoinDisabled = statusLabel !== "Active";
+  const isJoinDisabled = statusLabel !== "Active" && statusLabel !== "Joined";
+  const hasPaidInstallment = paidInstallments > 0;
+  const buttonLabel = hasJoined && hasPaidInstallment ? "Pay installment" : "Join";
 
   return (
     <div
@@ -84,7 +90,7 @@ export function PaymentVisualizationCard({
             }`}
             style={{ backgroundColor: getButtonColor() }}
           >
-            Join
+            {buttonLabel}
           </Link>
         )}
       </div>

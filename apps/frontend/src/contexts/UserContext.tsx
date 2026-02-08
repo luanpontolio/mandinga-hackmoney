@@ -4,7 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   type ReactNode,
 } from "react";
 import {
@@ -15,6 +17,7 @@ import {
   useLogout,
 } from "@getpara/react-sdk";
 import { arcTestnet } from "../lib/config";
+import { useToast } from "./ToastContext";
 
 type UserContextValue = {
   /** Open the Para modal (auth + external wallets) */
@@ -45,6 +48,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const { data: wallet } = useWallet();
   const { data: balanceData } = useWalletBalance();
   const { logoutAsync } = useLogout();
+  const { showToast } = useToast();
+  const previousConnectedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (isConnected && !previousConnectedRef.current) {
+      showToast("Wallet Connected");
+    }
+    previousConnectedRef.current = Boolean(isConnected);
+  }, [isConnected, showToast]);
 
   const connect = useCallback(() => {
     openModal();
