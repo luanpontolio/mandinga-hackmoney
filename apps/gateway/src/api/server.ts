@@ -16,6 +16,7 @@ app.get("/ccip-read", async ({ query, set }) => {
 });
 app.post("/ccip-read", async ({ body, set }) => {
     try {
+      console.debug("[ccip-read] request", { body });
       set.status = 200;
       return await handleCcipReadRequest(body as CcipReadRequest);
     } catch (error) {

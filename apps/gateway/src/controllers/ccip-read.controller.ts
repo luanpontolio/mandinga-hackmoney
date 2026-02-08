@@ -10,6 +10,7 @@ function getString(value: unknown) {
 }
 
 export async function handleCcipReadRequest(payload: CcipReadRequest) {
+  console.debug("[ccip-read] request", { payload });
   const sender = getString(payload.sender);
   const data = getString(payload.data);
   console.debug("[ccip-read] request", {
