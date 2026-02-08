@@ -5,10 +5,26 @@ import { loadRecords, upsertVaultRecord } from "../services/records-store.js";
 
 const app = new Elysia();
 
-app.onRequest(({ set }) => {
-  set.headers["access-control-allow-origin"] = "*";
+const allowedOrigins = (process.env.GATEWAY_ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.onRequest(({ set, request }) => {
+  const origin = request.headers.get("origin") ?? "";
+  const allowOrigin =
+    allowedOrigins.length === 0 || allowedOrigins.includes(origin)
+      ? origin || "*"
+      : "";
+
+  if (allowOrigin) {
+    set.headers["access-control-allow-origin"] = allowOrigin;
+    set.headers["access-control-allow-credentials"] = "true";
+    set.headers["vary"] = "origin";
+  }
   set.headers["access-control-allow-methods"] = "GET,POST,OPTIONS";
-  set.headers["access-control-allow-headers"] = "content-type";
+  set.headers["access-control-allow-headers"] =
+    "content-type,authorization,x-api-key";
 });
 
 app.options("/*", ({ set }) => {
