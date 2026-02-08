@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: mandinga-gateway
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 3000
