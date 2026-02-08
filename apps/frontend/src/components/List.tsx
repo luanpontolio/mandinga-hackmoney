@@ -6,6 +6,7 @@ import { arcTestnet } from "../lib/config";
 import { env } from "../lib/env";
 import { Card } from "./Card";
 import { Select } from "./ui/Select";
+import { useEnsRecords } from "../shared/hooks/useEnsRecords";
 import {
   Factory,
   Vault,
@@ -35,6 +36,7 @@ export function List() {
   const [circles, setCircles] = useState<VaultSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const { recordsByAddress } = useEnsRecords();
 
   const client = useMemo(
     () =>
@@ -146,9 +148,11 @@ export function List() {
           circle.startTime,
           circle.closeWindowLate
         );
-        return { circle, slots, slotsLeft, statusLabel };
+        const ensName =
+          recordsByAddress.get(circle.vaultAddress.toLowerCase()) ?? null;
+        return { circle, slots, slotsLeft, statusLabel, ensName };
       }),
-    [circles]
+    [circles, recordsByAddress]
   );
 
   const filteredCircles = useMemo(() => {
@@ -181,13 +185,14 @@ export function List() {
   } else {
     content = (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCircles.map(({ circle, slots, slotsLeft, statusLabel }) => (
+        {filteredCircles.map(({ circle, slots, slotsLeft, statusLabel, ensName }) => (
           <div key={circle.vaultAddress} className="mx-auto w-full max-w-[360px]">
             <Card
               circle={circle}
               slots={slots}
               slotsLeft={slotsLeft}
               statusLabel={statusLabel}
+              ensName={ensName}
             />
           </div>
         ))}
@@ -198,15 +203,23 @@ export function List() {
   return (
     <div className="flex flex-col">
       <div className="mb-6">
-        <div className="flex items-center gap-4 mb-2">
-          <label className="text-xs font-bold text-muted-foreground">Status:</label>
-          <Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}>
+        <h1 className="text-2xl font-bold text-foreground mb-2">Circles</h1>
+        <p className="text-sm text-muted-foreground">
+          Browse available funding circles below.
+        </p>
+      </div>
+
+      <div className="flex items-center gap-4 mb-6">
+        <label className="text-xs font-bold text-muted-foreground">Status:</label>
+        <Select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+        >
             <option value="all">All</option>
             <option value="active">Active</option>
             <option value="upcoming">Upcoming</option>
             <option value="ended">Ended</option>
-          </Select>
-        </div>
+        </Select>
       </div>
 
       {content}

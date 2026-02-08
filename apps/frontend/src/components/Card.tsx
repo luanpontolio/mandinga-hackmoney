@@ -9,7 +9,7 @@ import { formatAddress, formatUsd } from "../utils";
 import { TYPOGRAPHY } from "../app/components/designTokens";
 import { Card as CardUI } from "./ui/Card";
 import { Badge } from "./ui/Badge";
-import { formatAdaptiveRange, formatPayoutWindow } from "../lib/formatDate";
+import { formatPayoutWindow } from "../lib/formatDate";
 
 type EntryId = "early" | "middle" | "late";
 
@@ -18,9 +18,8 @@ type CardProps = {
   statusLabel: "Active" | "Upcoming" | "Ended";
   slotsLeft: number;
   slots: SlotsByWindow;
+  ensName?: string | null;
 };
-
-// STATUS_STYLES removed in favor of design tokens and `Badge` component
 
 const ENTRY_LABELS: Record<EntryId, string> = {
   early: "Early entry",
@@ -28,7 +27,7 @@ const ENTRY_LABELS: Record<EntryId, string> = {
   late: "Late entry",
 };
 
-export function Card({ circle, statusLabel, slotsLeft, slots }: CardProps) {
+export function Card({ circle, statusLabel, slotsLeft, slots, ensName }: CardProps) {
   const [hoveredEntry, setHoveredEntry] = useState<EntryId | "">("");
   const monthlyAmountLabel = formatUsd(circle.installmentAmount);
   const totalInstallments = Number(circle.totalInstallments);
@@ -91,7 +90,9 @@ export function Card({ circle, statusLabel, slotsLeft, slots }: CardProps) {
       </div>
 
       <div className="rounded-full bg-[#E3F2FD] px-4 py-2 w-full text-center">
-        <span className={`${TYPOGRAPHY.button} text-[#1976D2]`}>{circle.circleName ?? formatAddress(circle.vaultAddress)}</span>
+        <span className={`${TYPOGRAPHY.button} text-[#1976D2]`}>
+          {ensName || circle.circleName || formatAddress(circle.vaultAddress)}
+        </span>
       </div>
     </CardUI>
   );

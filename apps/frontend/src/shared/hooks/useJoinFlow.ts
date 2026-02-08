@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type Step = 1 | 2;
 
-export function useJoinFlow(signature: string | null) {
+export function useJoinFlow(_signature: string | null) {
   const [currentStep, setCurrentStep] = useState<Step>(1);
 
   // NOTE: do not auto-advance based on a stored signature. The join flow

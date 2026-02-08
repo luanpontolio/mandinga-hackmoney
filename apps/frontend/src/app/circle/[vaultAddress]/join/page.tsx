@@ -1,11 +1,10 @@
 "use client";
 
-import { Check } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { TermStep } from "../../../components/TermStep";
 import ReviewAndConfirmStep from "../../../components/ReviewAndConfirmStep";
 import JoinSuccessScreen from "../../../components/JoinSuccessScreen";
-import { useRouter } from "next/navigation";
 import { useVault, VaultProvider } from "../../../../contexts/VaultContext";
 import { formatUsd } from "../../../../utils";
 import { useJoinFlow } from "../../../../shared/hooks/useJoinFlow";
@@ -17,18 +16,17 @@ function JoinContent({ vaultAddress }: { vaultAddress: string }) {
     error,
     summary,
     signature,
+    step,
+    stepStatus,
     stepError,
     isSubmitting,
-    actionLabel,
     handleSignSiwe,
     handleCheckout,
   } = useVault();
   const { currentStep, setCurrentStep } = useJoinFlow(signature);
   const joinSummary = useJoinSummary(summary);
-  const router = useRouter();
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const stepResult = (useVault() as any).step;
-  const stepStatus = (useVault() as any).stepStatus;
+  const router = useRouter();
 
   if (loading) {
     return (
@@ -57,8 +55,6 @@ function JoinContent({ vaultAddress }: { vaultAddress: string }) {
   const feeLabel = joinSummary.feeLabel;
   const protocolFee = joinSummary.protocolFee;
   const totalWithFees = joinSummary.totalWithFees;
-  const circleLabel = joinSummary.circleLabel;
-
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <header className="w-full border-b border-[#F0F0F0] surfaceTopbar">
@@ -101,7 +97,7 @@ function JoinContent({ vaultAddress }: { vaultAddress: string }) {
 
       <main className="flex-1 flex flex-col items-center mx-auto max-w-[1280px] w-full px-6 md:px-10 pb-12 pt-6 box-border gap-6">
         {/* If transaction finished successfully show success screen */}
-        {stepResult === "result" && stepStatus === "success" ? (
+        {step === "result" && stepStatus === "success" ? (
           <JoinSuccessScreen circleSlug={summary.vaultAddress} />
         ) : (
           <>

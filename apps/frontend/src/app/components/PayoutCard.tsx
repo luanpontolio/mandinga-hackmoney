@@ -53,7 +53,10 @@ export function PayoutCard({
   const normalizedHovered = normalizeEntry(hoveredEntry);
   const safeTotalRounds = totalRounds > 0 ? totalRounds : 24;
   const safeCurrentRound = currentRound > 0 ? currentRound : 1;
-  const progressPercentage = Math.max(1, (safeCurrentRound / safeTotalRounds) * 100);
+  const progressPercentage = Math.max(
+    1,
+    (safeCurrentRound / safeTotalRounds) * 100
+  );
   const activeEntry = normalizedHovered || normalizedSelected;
 
   const isValidDate = (value: Date | null | undefined): value is Date =>
@@ -175,7 +178,6 @@ export function PayoutCard({
     const roundStart = new Date(startDate.getTime() + (roundIndex - 1) * roundMs);
     return formatDateParts(roundStart, closeWindowLate);
   };
-
   if (isPreJoin) {
     return (
       <div

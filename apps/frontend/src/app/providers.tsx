@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ParaProvider } from "@getpara/react-sdk";
 import "@getpara/react-sdk/styles.css";
 import { UserProvider } from "../contexts/UserContext";
+import { ToastProvider } from "../contexts/ToastContext";
 import { arcTestnet } from "../lib/config";
 
 const queryClient = new QueryClient();
@@ -29,7 +30,7 @@ export function Providers({
         paraClientConfig={{ apiKey: paraApiKey }}
         config={{ appName: paraAppName }}
         externalWalletConfig={{
-          wallets: ["METAMASK","WALLETCONNECT","COINBASE"],
+          wallets: ["METAMASK", "WALLETCONNECT", "COINBASE"],
           evmConnector: {
             config: {
               chains: [arcTestnet],
@@ -44,7 +45,9 @@ export function Providers({
           authLayout: ["AUTH:FULL", "EXTERNAL:FULL"],
         }}
       >
-        <UserProvider>{children}</UserProvider>
+        <ToastProvider>
+          <UserProvider>{children}</UserProvider>
+        </ToastProvider>
       </ParaProvider>
     </QueryClientProvider>
   );

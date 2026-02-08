@@ -5,6 +5,7 @@ type EnvConfig = {
   factoryFromBlock: string;
   ensResolverUrl: string;
   ensDomain: string;
+  gatewayUrl: string;
 };
 
 const required = (key: string) => {
@@ -20,8 +21,9 @@ export const env: EnvConfig = {
   chainId: process.env.NEXT_PUBLIC_CHAIN_ID ?? "",
   factoryAddress: process.env.NEXT_PUBLIC_FACTORY_ADDRESS ?? "",
   factoryFromBlock: process.env.NEXT_PUBLIC_FACTORY_FROM_BLOCK ?? "",
-  ensResolverUrl: process.env.NEXT_PUBLIC_ENS_RESOLVER_URL ?? "",
+  ensResolverUrl: process.env.NEXT_PUBLIC_ENS_RESOLVER_URL ?? "http://localhost:4000",
   ensDomain: process.env.NEXT_PUBLIC_ENS_DOMAIN ?? "",
+  gatewayUrl: process.env.NEXT_PUBLIC_GATEWAY_URL ?? "",
 };
 
 console.log("env", env);

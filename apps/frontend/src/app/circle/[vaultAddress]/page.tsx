@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useUser } from "../../../contexts/UserContext";
 import { useVault, VaultProvider } from "../../../contexts/VaultContext";
 import { formatAddress, formatUsd } from "../../../utils";
-import { formatAdaptiveRange, formatAdaptiveDate, formatPayoutWindow } from "../../../lib/formatDate";
+import { formatAdaptiveDate, formatPayoutWindow } from "../../../lib/formatDate";
 import { ArcCard } from "../../components/ArcCard";
 import { EnsCard } from "../../components/EnsCard";
 import { EntryStatusCard } from "../../components/EntryStatusCard";
@@ -19,9 +19,7 @@ import { GRID_GAP } from "../../components/designTokens";
 import { useCircleEntrySelection } from "../../../shared/hooks/useCircleEntrySelection";
 import { useCurrentQuotaId } from "../../../shared/hooks/useCurrentQuotaId";
 import { useRedeemFlow } from "../../../shared/hooks/useRedeemFlow";
-import { getAddress } from "viem";
-
-// Use shared adaptive date formatter
+import { useEnsRecords } from "../../../shared/hooks/useEnsRecords";
 
 const getStatusLabel = (startDate: Date | null, endDate: Date | null) => {
   if (!startDate || !endDate) return "--";
@@ -146,7 +144,6 @@ function CircleDetailContent() {
       return 1;
     }
   }, [windowDates, totalRounds]);
-
   const fallbackQuotaId = useCurrentQuotaId(windowDates);
   const currentQuotaId =
     hasJoined && positionQuotaId !== null ? positionQuotaId : fallbackQuotaId;
@@ -169,18 +166,27 @@ function CircleDetailContent() {
     currentQuotaId,
     walletAddress: fullAddress ?? null,
   });
-  const statusLabel = isWinner
-    ? "Winner"
-    : hasJoined && canShowJoined
-      ? "Joined"
-      : baseStatusLabel;
+  const { getEnsNameForVault } = useEnsRecords();
+  const resolvedEnsName = summary?.vaultAddress
+    ? getEnsNameForVault(summary.vaultAddress)
+    : null;
+  const ensName = resolvedEnsName ?? summary?.circleName ?? title;
+  const ensUrl = resolvedEnsName
+    ? `https://app.ens.domains/name/${resolvedEnsName}`
+    : null;
   const currentInstallment = hasJoined ? Number(paidInstallments) : 0;
+  const hasRemainingInstallments =
+    hasJoined &&
+    totalInstallments > 0 &&
+    currentInstallment < totalInstallments;
+  const statusLabel =
+    isWinner && !hasRemainingInstallments
+      ? "Winner"
+      : hasJoined && canShowJoined
+        ? "Joined"
+        : baseStatusLabel;
   const members = participants.map((participant) => formatAddress(participant));
   const potLabel = potShare !== null ? formatUsd(potShare) : "--";
-  
-  console.log("isWinner", isWinner);
-  console.log("drawCompleted", drawCompleted);
-  console.log("windowSettled", windowSettled);
 
   if (loading) {
     return (
@@ -217,6 +223,8 @@ function CircleDetailContent() {
             selectedEntry={selectedEntry}
             joinHref={joinHref}
             statusLabel={statusLabel}
+            hasJoined={hasJoined}
+            paidInstallments={currentInstallment}
           />
           <EntryStatusCard
             isWalletConnected={isConnected}
@@ -228,7 +236,11 @@ function CircleDetailContent() {
             entryCounts={entryCounts}
             entryDescriptions={entryDescriptions}
           />
-          <TimelineCard startDate={startDateLabel} endDate={endDateLabel} />
+          <TimelineCard
+            startDate={startDateLabel}
+            endDate={endDateLabel}
+            baseStatus={baseStatusLabel}
+          />
           <PayoutCard
             isWalletConnected={isConnected}
             hasJoined={hasJoined}
@@ -254,7 +266,7 @@ function CircleDetailContent() {
               onRedeem={handleRedeem}
             />
           )}
-          <EnsCard ensName={summary?.circleName ?? title} ensUrl={arcscanUrl} />
+          <EnsCard ensName={ensName ?? "--"} ensUrl={ensUrl} />
           <MembersCard members={members} />
         </div>
 
@@ -288,6 +300,8 @@ function CircleDetailContent() {
               selectedEntry={selectedEntry}
               joinHref={joinHref}
               statusLabel={statusLabel}
+            hasJoined={hasJoined}
+            paidInstallments={currentInstallment}
             />
           </div>
           <div style={{ gridArea: "entry" }}>
@@ -303,10 +317,14 @@ function CircleDetailContent() {
             />
           </div>
           <div style={{ gridArea: "timeline" }}>
-            <TimelineCard startDate={startDateLabel} endDate={endDateLabel} />
+            <TimelineCard
+              startDate={startDateLabel}
+              endDate={endDateLabel}
+              baseStatus={baseStatusLabel}
+            />
           </div>
           <div style={{ gridArea: "ens" }}>
-            <EnsCard ensName={summary?.circleName ?? title} ensUrl={arcscanUrl} />
+            <EnsCard ensName={ensName ?? "--"} ensUrl={ensUrl} />
           </div>
           <div style={{ gridArea: "payout" }} className="flex flex-col gap-4">
             <PayoutCard
@@ -353,7 +371,11 @@ function CircleDetailContent() {
           }}
         >
           <div className={`flex flex-col ${GRID_GAP}`}>
-            <TimelineCard startDate={startDateLabel} endDate={endDateLabel} />
+            <TimelineCard
+              startDate={startDateLabel}
+              endDate={endDateLabel}
+              baseStatus={baseStatusLabel}
+            />
             <PayoutCard
               isWalletConnected={isConnected}
               hasJoined={hasJoined}
@@ -390,6 +412,8 @@ function CircleDetailContent() {
               selectedEntry={selectedEntry}
               joinHref={joinHref}
               statusLabel={statusLabel}
+            hasJoined={hasJoined}
+            paidInstallments={currentInstallment}
             />
             <EntryStatusCard
               isWalletConnected={isConnected}
@@ -406,7 +430,7 @@ function CircleDetailContent() {
           <div className={`flex flex-col ${GRID_GAP}`}>
             <SlotsCard statusLabel={statusLabel} slotsLeftLabel={slotsLeftLabel} />
             <MembersCard members={members} />
-            <EnsCard ensName={summary?.circleName ?? title} ensUrl={arcscanUrl} />
+            <EnsCard ensName={ensName ?? "--"} ensUrl={ensUrl} />
             <ArcCard arcscanUrl={arcscanUrl} />
           </div>
         </div>

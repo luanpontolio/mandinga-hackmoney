@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type MouseEventHandler } from "react";
+import { useRef } from "react";
 import { totalMonths, type SlotsByWindow } from "./totalMonths";
 
 type EntryId = "early" | "middle" | "late";
@@ -81,17 +81,9 @@ export function Rings({
   // target visual radius (close to viewBox half size) so rings touch card padding
   const maxVisualRadius = 116; // viewBox center is 120, leave ~4px padding
   // allow upscaling for few rings so grid fills the area; cap to avoid extreme scaling
-  const scale = outerRadiusRaw > 0 ? Math.min(2.0, maxVisualRadius / outerRadiusRaw) : 1;
+  const scale =
+    outerRadiusRaw > 0 ? Math.min(2.0, maxVisualRadius / outerRadiusRaw) : 1;
 
-  const outerRadius = outerRadiusRaw * scale;
-  const earlyRadius =
-    normalizedSlots.early > 0
-      ? (getRingRadius(normalizedSlots.early - 1) + RING_STEP / 2) * scale
-      : 0;
-  const middleRadius =
-    normalizedSlots.middle > 0
-      ? (getRingRadius(normalizedSlots.early + normalizedSlots.middle - 1) + RING_STEP / 2) * scale
-      : 0;
 
   const handleSelect = (entry: EntryId) => {
     if (!onSelectEntry || !canSelect) return;
@@ -182,6 +174,7 @@ export function Rings({
               cx="120"
               cy="120"
               r={getRingRadius(ring.index) * scale}
+              r={getRingRadius(ring.index) * scale}
               fill="none"
               stroke={ring.color}
               strokeWidth={3}
@@ -189,7 +182,6 @@ export function Rings({
               className="transition-all duration-200"
             />
           ))}
-
           {/* Pointer-based ring band detection replaces the overlapping invisible circles */}
         </svg>
       </div>

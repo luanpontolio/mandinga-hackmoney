@@ -1,7 +1,6 @@
 import "../styles/globals.css";
 import { Patrick_Hand, Share_Tech_Mono } from "next/font/google";
 import { Providers } from "./providers";
-import { ConnectButton } from "../components/ConnectButton";
 import ErrorGuard from "./components/ErrorGuard";
 import EarlyErrorGuard from "./components/EarlyErrorGuard";
 

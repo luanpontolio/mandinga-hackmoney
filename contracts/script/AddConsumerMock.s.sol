@@ -12,10 +12,17 @@ contract AddConsumerMockScript is Script {
     /// @notice Adds DrawConsumer (or one derived from VAULT_ADDRESS) to VRF_SUBSCRIPTION_ID.
     function run() external {
         uint256 pk = vm.envUint("PRIVATE_KEY");
+<<<<<<< HEAD
         address coordinator = vm.envAddress("VRF_COORDINATOR");
         uint64 subId = uint64(vm.envUint("VRF_SUBSCRIPTION_ID"));
 
         address drawConsumer = vm.envOr("DRAW_CONSUMER", address(0));
+=======
+        address coordinator = 0xfD24AFc2822d937b40FBdF37D210Ea6E16EE3e1A;
+        uint64 subId = uint64(1);
+
+        address drawConsumer = 0x5e008af79d3596b58c92bb1921BddBF63d27F93f;
+>>>>>>> origin/main
         if (drawConsumer == address(0)) {
             address vaultAddress = vm.envAddress("VAULT_ADDRESS");
             drawConsumer = CircleVault(payable(vaultAddress)).drawConsumer();

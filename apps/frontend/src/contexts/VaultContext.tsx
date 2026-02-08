@@ -28,6 +28,7 @@ import {
 } from "../lib/contracts";
 import { useUser } from "./UserContext";
 import { formatUsd } from "../utils";
+import { useToast } from "./ToastContext";
 
 type Step = "idle" | "siwe" | "checkout" | "result";
 type StepStatus = "success" | "error" | null;
@@ -67,6 +68,7 @@ export function VaultProvider({
   vaultAddress: string;
 }) {
   const { isConnected, connect, fullAddress } = useUser();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<VaultSummary | null>(null);
@@ -336,6 +338,7 @@ export function VaultProvider({
       setStepError(
         err instanceof Error ? err.message : "Transaction failed."
       );
+      showToast("Transaction Failed");
       setStep("result");
     } finally {
       setIsSubmitting(false);
@@ -347,6 +350,7 @@ export function VaultProvider({
     normalizedVaultAddress,
     quota,
     client,
+    showToast,
   ]);
 
   const handleStartFlow = useCallback(() => {

@@ -12,11 +12,19 @@ type TermStepProps = {
   onSign: () => void;
 };
 
-export function TermStep({ monthlyAmount, totalMonths, totalRounds, startDate, endDate, onSign }: TermStepProps) {
+export function TermStep({
+  monthlyAmount,
+  totalMonths,
+  totalRounds,
+  startDate,
+  endDate,
+  onSign,
+}: TermStepProps) {
   const [agreed, setAgreed] = useState(false);
 
   // Build the dynamic first term depending on props available
-  let firstDesc = "You agree to pay the monthly installment for the duration of the circle. Early exit is not guaranteed.";
+  let firstDesc =
+    "You agree to pay the monthly installment for the duration of the circle. Early exit is not guaranteed.";
   if (monthlyAmount && totalMonths && totalMonths > 0) {
     firstDesc = `You agree to pay ${monthlyAmount} every month for ${totalMonths} months. Early exit is not guaranteed.`;
   } else if (monthlyAmount && totalRounds && totalRounds > 0) {
@@ -66,7 +74,9 @@ export function TermStep({ monthlyAmount, totalMonths, totalRounds, startDate, e
 
       <div className="px-5 lg:px-6 py-6">
         <div className="p-6 bg-[#FAFAFA] rounded-lg border border-[#E5E5E5]">
-          <p className="font-mono text-sm text-[#1A1A1A] mb-4">If you accept, you agree that:</p>
+          <p className="font-mono text-sm text-[#1A1A1A] mb-4">
+            If you accept, you agree that:
+          </p>
           <div className="flex flex-col gap-6">
             {terms.map((t) => (
               <div key={t.num} className="font-mono text-sm flex gap-4 items-start">
@@ -75,7 +85,9 @@ export function TermStep({ monthlyAmount, totalMonths, totalRounds, startDate, e
                 </div>
                 <div className="flex-1">
                   <div className="text-[#1A1A1A] font-medium mb-1">{t.title}</div>
-                  <div className="text-[#666666] text-xs font-medium leading-snug">{t.desc}</div>
+                  <div className="text-[#666666] text-xs font-medium leading-snug">
+                    {t.desc}
+                  </div>
                 </div>
               </div>
             ))}
@@ -84,7 +96,7 @@ export function TermStep({ monthlyAmount, totalMonths, totalRounds, startDate, e
       </div>
 
       <div className="px-5 lg:px-6 pb-5 lg:pb-6 pt-4 border-t border-[#F0F0F0]">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <label className="flex items-center gap-2.5 cursor-pointer">
             <input
               type="checkbox"
