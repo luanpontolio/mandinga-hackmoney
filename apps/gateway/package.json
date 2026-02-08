@@ -4,16 +4,16 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "echo \"Use vercel dev\"",
-    "build": "echo \"No build required\"",
-    "start": "echo \"No start required\""
+    "build": "bun run tsc",
+    "start": "node dist/api/index.js"
   },
   "engines": {
-    "node": ">=20",
+    "node": "24.x",
     "bun": ">=1.0.0"
   },
   "dependencies": {
-    "@vercel/node": "^3.2.1",
+    "@sinclair/typebox": "^0.34.48",
+    "elysia": "^1.4.22",
     "viem": "2.45.1"
   },
   "devDependencies": {
