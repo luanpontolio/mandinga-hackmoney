@@ -229,6 +229,8 @@ function CircleDetailContent() {
             selectedEntry={selectedEntry}
             joinHref={joinHref}
             statusLabel={statusLabel}
+            hasJoined={hasJoined}
+            paidInstallments={currentInstallment}
           />
           <EntryStatusCard
             isWalletConnected={isConnected}
@@ -299,6 +301,8 @@ function CircleDetailContent() {
               selectedEntry={selectedEntry}
               joinHref={joinHref}
               statusLabel={statusLabel}
+            hasJoined={hasJoined}
+            paidInstallments={currentInstallment}
             />
           </div>
           <div style={{ gridArea: "entry" }}>
@@ -399,6 +403,8 @@ function CircleDetailContent() {
               selectedEntry={selectedEntry}
               joinHref={joinHref}
               statusLabel={statusLabel}
+            hasJoined={hasJoined}
+            paidInstallments={currentInstallment}
             />
             <EntryStatusCard
               isWalletConnected={isConnected}
