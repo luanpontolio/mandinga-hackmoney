@@ -2,11 +2,16 @@
 
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useVault } from "../../contexts/VaultContext";
+import { formatUsd } from "../../utils";
 
 type Props = { circleSlug?: string | null };
 
 export default function JoinSuccessScreen({ circleSlug }: Props) {
   const router = useRouter();
+  const { claimTokenBalance, totalPaid } = useVault();
+  const claimTokenLabel = formatUsd(claimTokenBalance);
+  const totalPaidLabel = formatUsd(totalPaid);
 
   return (
     <div className="rounded-xl border border-[#E5E5E5] bg-white">
@@ -22,11 +27,11 @@ export default function JoinSuccessScreen({ circleSlug }: Props) {
           <div className="bg-[#FAFAFA] rounded-lg border border-[#E5E5E5] p-4 text-sm">
             <div className="flex justify-between py-1.5">
               <span className="text-[#666666]">Claim tokens</span>
-              <span className="font-semibold text-[#1A1A1A]">—</span>
+              <span className="font-semibold text-[#1A1A1A]">{claimTokenLabel}</span>
             </div>
             <div className="flex justify-between py-1.5">
-              <span className="text-[#666666]">Position</span>
-              <span className="font-medium text-[#1A1A1A]">—</span>
+              <span className="text-[#666666]">Total paid</span>
+              <span className="font-medium text-[#1A1A1A]">{totalPaidLabel}</span>
             </div>
           </div>
         </div>
