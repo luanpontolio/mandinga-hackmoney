@@ -5,6 +5,12 @@
       "rev": "7e833a4d423ae32a0e51b15b5dfc288c18cbdae8"
     }
   },
+  "lib/ens-contracts": {
+    "tag": {
+      "name": "v1.6.0",
+      "rev": "718b1c0058482126431000818c92b411bdf74007"
+    }
+  },
   "lib/forge-std": {
     "tag": {
       "name": "v1.14.0",

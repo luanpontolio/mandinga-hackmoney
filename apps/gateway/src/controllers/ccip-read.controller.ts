@@ -12,6 +12,12 @@ function getString(value: unknown) {
 export async function handleCcipReadRequest(payload: CcipReadRequest) {
   const sender = getString(payload.sender);
   const data = getString(payload.data);
+  console.debug("[ccip-read] request", {
+    hasSender: Boolean(sender),
+    dataLen: data.length,
+    dataPrefix: data.slice(0, 10),
+  });
   const responseData = await handleGatewayRequest({ sender, data });
+  console.debug("[ccip-read] response", { dataLen: responseData.length });
   return { data: responseData };
 }
