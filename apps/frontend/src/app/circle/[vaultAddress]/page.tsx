@@ -18,6 +18,7 @@ import { GRID_GAP } from "../../components/designTokens";
 import { useCircleEntrySelection } from "../../../shared/hooks/useCircleEntrySelection";
 import { useCurrentQuotaId } from "../../../shared/hooks/useCurrentQuotaId";
 import { useRedeemFlow } from "../../../shared/hooks/useRedeemFlow";
+import { useMandingaEnsName } from "../../../shared/hooks/useMandingaEnsName";
 import { getAddress } from "viem";
 
 const formatDate = (date: Date | null) => {
@@ -180,18 +181,23 @@ function CircleDetailContent() {
     currentQuotaId,
     walletAddress: fullAddress ?? null,
   });
-  const statusLabel = isWinner
-    ? "Winner"
-    : hasJoined && canShowJoined
-      ? "Joined"
-      : baseStatusLabel;
+  const { ensName, ensUrl } = useMandingaEnsName({
+    vaultAddress: summary?.vaultAddress ?? null,
+    circleName: summary?.circleName ?? null,
+  });
   const currentInstallment = hasJoined ? Number(paidInstallments) : 0;
+  const hasRemainingInstallments =
+    hasJoined &&
+    totalInstallments > 0 &&
+    currentInstallment < totalInstallments;
+  const statusLabel =
+    isWinner && !hasRemainingInstallments
+      ? "Winner"
+      : hasJoined && canShowJoined
+        ? "Joined"
+        : baseStatusLabel;
   const members = participants.map((participant) => formatAddress(participant));
   const potLabel = potShare !== null ? formatUsd(potShare) : "--";
-  
-  console.log("isWinner", isWinner);
-  console.log("drawCompleted", drawCompleted);
-  console.log("windowSettled", windowSettled);
 
   if (loading) {
     return (
@@ -267,7 +273,7 @@ function CircleDetailContent() {
               onRedeem={handleRedeem}
             />
           )}
-          <EnsCard ensName="--" ensUrl={null} />
+          <EnsCard ensName={ensName} ensUrl={ensUrl} />
           <MembersCard members={members} />
         </div>
 
@@ -321,7 +327,7 @@ function CircleDetailContent() {
             <TimelineCard startDate={startDateLabel} endDate={endDateLabel} />
           </div>
           <div style={{ gridArea: "ens" }}>
-            <EnsCard ensName="--" ensUrl={null} />
+            <EnsCard ensName={ensName} ensUrl={ensUrl} />
           </div>
           <div style={{ gridArea: "payout" }} className="flex flex-col gap-4">
             <PayoutCard
@@ -421,7 +427,7 @@ function CircleDetailContent() {
           <div className={`flex flex-col ${GRID_GAP}`}>
             <SlotsCard statusLabel={statusLabel} slotsLeftLabel={slotsLeftLabel} />
             <MembersCard members={members} />
-            <EnsCard ensName="--" ensUrl={null} />
+            <EnsCard ensName={ensName} ensUrl={ensUrl} />
             <ArcCard arcscanUrl={arcscanUrl} />
           </div>
         </div>
