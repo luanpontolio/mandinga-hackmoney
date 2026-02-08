@@ -19,8 +19,8 @@ contract CreateCircleScript is Script {
         uint256 numRounds = 10;
         uint256 numUsers = 10;
         uint16 exitFeeBps = 400; // 5%
-        uint256 quotaCapEarly = 3;
-        uint256 quotaCapMiddle = 4;
+        uint256 quotaCapEarly = 4;
+        uint256 quotaCapMiddle = 3;
         uint256 quotaCapLate = 3;
 
         // For testnet set VRF_COORDINATOR and VRF_SUBSCRIPTION_ID; for local use placeholder (deploy VRFCoordinatorV2_5Mock and pass if needed).

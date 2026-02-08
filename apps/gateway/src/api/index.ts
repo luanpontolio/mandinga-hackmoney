@@ -1,24 +1,11 @@
-import { Elysia } from "elysia";
-import { CcipReadRequest, handleCcipReadRequest } from "../controllers/ccip-read.controller.js";
+import cluster from 'node:cluster'
+import os from 'node:os'
+import process from 'node:process'
 
-const app = new Elysia();
-
-app.get("/", () => ({ status: "ok" }));
-app.get("/health", () => ({ status: "ok" }));
-app.get("/ccip-read", async ({ query, set }) => {
-  try {
-    set.status = 200;
-    return await handleCcipReadRequest(query as CcipReadRequest);
-  } catch (error) {
-    set.status = 400;
-    return { error: String(error) };
-  }
-});
-
-// Start the server
-const port = process.env.PORT || 4000;
-app.listen(port);
-
-console.log(`🦊 Elysia server running on port ${port}`);
-
-export default app;
+if (cluster.isPrimary) {
+  	for (let i = 0; i < os.availableParallelism(); i++)
+    	cluster.fork()
+} else {
+  	await import('./server.js')
+  	console.log(`Worker ${process.pid} started`)
+}

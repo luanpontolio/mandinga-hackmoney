@@ -23,10 +23,30 @@ export async function handleGatewayRequest({
     throw new Error("Missing or invalid data");
   }
 
+  console.debug("[gateway] handleGatewayRequest start", {
+    dataLen: data.length,
+    dataPrefix: data.slice(0, 10),
+  });
+
   const config = getConfig();
+  console.debug("[gateway] config loaded", {
+    ttlSeconds: config.ttlSeconds,
+  });
+
   const { name, resolverCallData } = decodeCallData(data as Hex);
+  console.debug("[gateway] decoded call data", {
+    name,
+    resolverSelector: resolverCallData.slice(0, 10),
+    resolverDataLen: resolverCallData.length,
+  });
+
   const result = resolveRecord(config.records, name, resolverCallData);
+  console.debug("[gateway] resolveRecord result", {
+    resultLen: result.length,
+  });
+
   const expires = Math.floor(Date.now() / 1000) + config.ttlSeconds;
+  console.debug("[gateway] expires set", { expires });
 
   const digest = keccak256(
     encodeAbiParameters(
