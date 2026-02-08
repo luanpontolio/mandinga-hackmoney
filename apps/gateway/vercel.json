@@ -1,17 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "bunVersion": "1.x",
-  "installCommand": "bun install",
-  "buildCommand": "echo \"Skipping build for Bun runtime\"",
-  "builds": [
-    {
-      "src": "api/**/*.ts",
-      "use": "@vercel/node"
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "nodejs24.x"
     }
-  ],
-  "routes": [
-    { "src": "^/$", "dest": "/api/index.ts" },
-    { "src": "^/health$", "dest": "/api/health.ts" },
-    { "src": "^/ccip-read$", "dest": "/api/ccip-read.ts" }
-  ]
+  }
 }
