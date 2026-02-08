@@ -1,186 +1,215 @@
-# 🤞 Mandinga Protocol  
-**Protocol for Group-Based, Interest-Free Credit**
+# Mandinga
 
-Mandinga is a protocol for organizing installment-based financing around concrete goals such as:
+**Interest-Free Community Credit Protocol with USDC-Native Settlement**
+
+Mandinga is a protocol for organizing community-based credit.
+
+It enables groups to coordinate access to large amounts of capital through
+shared commitment, fixed installments, and transparent rules without
+interest and without centralized operators.
+
+Participants receive capital first and repay over time.
+
+---
+
+![Mandinga Wireframe](/wire.png)
+
+---
+
+## Overview
+
+Access to credit is essential for housing, education, work, travel, and life events.
+
+In many communities, people already organize informal systems to:
+
+- Pool money  
+- Rotate payouts  
+- Share risk  
+- Enforce commitment socially  
+
+These systems work, but they rely on trust, proximity, and manual coordination.
+
+Mandinga encodes this coordination in software.
+
+It provides a programmable credit machine that allows communities to
+organize, operate, and settle shared financing in a transparent way.
+
+---
+
+## What Mandinga Enables
+
+With Mandinga, communities can create credit circles around real goals:
 
 - Housing  
 - Education  
 - Devices  
 - Businesses  
-- Life events  
+- Travel  
+- Events  
 
-It allows groups to coordinate access to large payouts through predictable schedules, transparent rules, and onchain execution.
+Each circle defines:
 
-Participants receive capital first and repay over time.
+- Target payout amount  
+- Duration  
+- Monthly installment  
+- Payout windows  
+- Participation rules  
 
-No banks.  
-No interest.  
-No opaque intermediaries.
-
----
-
-## 🚀 TL;DR
-
-Mandinga implements group-based credit coordination onchain.
-
-It enables:
-
-- Fixed monthly installments  
-- Scheduled payouts  
-- Verifiable selection  
-- Deterministic settlement  
-- Public accounting  
-
-Each participant joins a circle, selects a payout month, and follows a predefined contribution plan.
+Participants commit to a plan and interact with a system that enforces it.
 
 ---
 
-## 🔗 Proof of Implementation
+## How It Works
 
-- Smart Contracts: `/contracts`
-- VRF Consumer: `/contracts/RandomnessConsumer.sol`
-- ENS Registry: `/contracts/ENSRegistry.sol`
-- Tests: `/test`
-- Frontend: `/frontend`
-- Demo: [link]
-- Deployment: [address]
+Mandinga standardizes community credit into a simple structure.
 
----
+### 1. Define a Goal
 
-## 🌍 Why Mandinga?
-
-Millions of people rely on installment-based financing to access housing, education, and essential assets.
-
-These systems work because:
-
-- Contributions are predictable  
-- Payouts are coordinated  
-- Risk is shared  
-- Commitment is collective  
-
-Mandinga encodes this logic in public, open, and verifiable software.
-
-It transforms social coordination into programmable rules.
-
----
-
-## 🔍 How Mandinga Encodes Coordination
-
-Instead of relying on informal agreements or institutional operators, the protocol encodes:
-
-- Contribution schedules  
-- Payout timing  
-- Quota positions  
-- Default handling  
-- Exit and buyback rules  
-- Settlement logic  
-
-All rules are executed by smart contracts.
-
-Social coordination becomes programmable coordination.
-
-Participants interact with a system that enforces these rules transparently. 
-
----
-
-## 🧭 User Flow
-
-Mandinga standardizes participation into a simple flow.
-
-### 1. Select Payout Amount
-
-“How much do you want to receive?”
+A community creates a circle around a concrete objective.
 
 Example:
-- $20,000
-- $50,000
-- $500,000
+
+> “We want to fund $25,000 for conference travel.”
 
 ---
 
-### 2. Choose Duration
+### 2. Commit to Installments
 
-“How long do you want to pay?”
+Participants agree to pay a fixed amount every month.
 
-Examples:
-- 2 years  
-- 4 years  
-- 7 years  
+Example:
+
+> $100 per month for 24 months.
 
 ---
 
-### 3. Select Payout Month
+### 3. Choose a Payout Window
 
-“When do you want to receive?”
-
-Choose a quota:
+Each participant selects when they prefer to receive funds:
 
 - Early  
 - Middle  
 - Late  
 
-Each quota has different cost and incentives.
+This balances urgency, risk, and incentives.
 
 ---
 
-### 4. Join Circle
+### 4. Join the Circle
 
-- Deposit first installment  
-- Mint position NFT  
-- Activate quota  
+To join, a participant:
+
+- Deposits the first installment  
+- Receives a position NFT  
+- Activates their quota  
 
 ---
 
 ### 5. Operate
 
-- Pay monthly  
-- Track status  
-- Sell to Vault (buyback) 
+Over time, participants:
+
+- Pay installments  
+- Track progress  
+- Accumulate claim tokens  
+- Maintain eligibility  
+
+The protocol enforces the rules.
 
 ---
 
 ### 6. Settle
 
-- Burn claims  
-- Redeem USDC  
-- Close position  
+At settlement:
+
+- Claim tokens are burned  
+- USDC is redeemed  
+- Positions are closed  
+
+All accounting is deterministic.
 
 ---
 
-## 🧱 System Architecture
+## Shared Commitment Model
 
-Mandinga is composed of three layers.
+Mandinga is based on shared responsibility.
+
+Each participant:
+
+- Commits to a schedule  
+- Shares risk with the group  
+- Benefits from collective reliability  
+
+There is no interest.
+
+Instead, risk is handled through:
+
+- Structured quotas  
+- Participation constraints  
+- Buyback mechanisms  
+- Protocol rules  
+
+Commitment becomes infrastructure.
+
+---
+
+## System Architecture
+
+Mandinga is composed of three core layers.
+
+---
 
 ### Circle (Vault Contract)
 
+Each circle is a vault contract that:
+
 - Holds USDC  
-- Enforces rules  
+- Tracks contributions  
 - Executes payouts  
-- Freezes state  
+- Enforces rules  
 - Handles settlement  
 
-### Position NFT
-
-- Represents a quota  
-- Stores history  
-- Encodes status  
-- Persists identity  
-
-### ERC20 Claims
-
-- Minted from installments  
-- Represent exposure  
-- Transferable pre-snapshot  
-- Burned on redemption  
-
-NFT = participation  
-ERC20 = financial exposure
+The vault is the financial core.
 
 ---
 
-## 🌐 ENS Registry
+### Position NFT (ERC-721)
 
-Each circle has an ENS identity.
+Each participant receives an NFT that:
+
+- Represents their quota  
+- Stores participation history  
+- Encodes status  
+- Persists identity  
+
+The NFT is the social and historical layer.
+
+---
+
+### Claim Tokens (ERC-20)
+
+Installments mint ERC20 claim tokens that:
+
+- Represent proportional vault exposure  
+- Enable deterministic redemption  
+- Can be transferred before snapshots  
+- Are burned on settlement  
+
+The ERC20 layer is the financial exposure layer.
+
+---
+
+NFT = participation  
+ERC20 = exposure  
+
+This separation enables transparent accounting and predictable settlement,
+and provides a foundation for future governance and risk coordination.
+
+---
+
+## ENS Integration
+
+Each circle is assigned an ENS identity.
 
 Examples:
 
@@ -188,55 +217,32 @@ Examples:
 - housing-100k.mandinga.eth  
 - education-fund.mandinga.eth  
 
-Records:
+Metadata is resolved using an EIP-3668 (CCIP Read) offchain resolver.
 
-- Goal  
-- Parameters  
-- Vault  
-- Status  
-- Proof  
+This enables:
 
----
-
-## 🔁 Lifecycle
-
-### 1. Creation
-- Deploy vault  
-- Register ENS  
-- Set parameters  
-
-### 2. Enrollment
-- Deposit  
-- Mint NFT  
-- Mint ERC20 Claims
-
-### 3. Contribution
-- Monthly payments  
-- Mint more ERC20 Claims
-- Update records  
-
-### 4. Operation
-- Enforce defaults  
-- Enable buyback  
-
-### 5. Trigger
-- Freeze  
-- Snapshot  
-
-### 6. Settlement
-- Burn ERC20 Claims
-- Redeem  
-
-### 7. Execution
-- Release funds  
-- Record proof  
-
-### 8. Closure
-- Archive  
+- Flexible naming  
+- Signed metadata  
+- Minimal onchain storage  
+- Verifiable discovery  
 
 ---
 
-## 🔐 Settlement Model
+## Randomized Selection
+
+Where randomization is required, Mandinga uses Chainlink VRF.
+
+All draws are:
+
+- Public  
+- Verifiable  
+- Tamper-resistant  
+
+This ensures fair and auditable selection.
+
+---
+
+## Settlement Model
 
 Mandinga uses burn-on-redeem settlement.
 
@@ -245,72 +251,48 @@ redeem → burn → transfer
 
 Rules:
 
-- 1 token = 1 unit  
+- 1 claim token = 1 unit of exposure  
 - No double redemption  
 - Burn removes liability  
 
-This ensures solvency.
+This guarantees solvency.
 
 ---
 
-## 💰 Economic Model
+## Economic Model
 
-- Installments purchase access  
+- Installments purchase participation  
 - Claims represent exposure  
 - Holding enables redemption  
 - Selling transfers position  
 
-No inflation.  
-No farming.  
-No hidden yield.
+There is:
+
+- No inflation  
+- No yield farming  
+- No hidden fees  
+- No speculative rewards  
+
+Mandinga is designed for coordination, not extraction.
 
 ---
 
-## 🎁 Incentives & Seeding
+## Transparency Layer
 
-To ensure fast circle activation:
-
-### Protocol Seeding
-
-Unfilled quotas may be temporarily backed by protocol liquidity.
-
-### Order Incentives
-
-Late quotas may receive:
-
-- Discounts  
-- Cashback  
-- Reduced installments  
-
-### Cashback
-
-Rewards may be applied to:
-
-- Early payments  
-- Large amounts  
-- High reliability  
-
-These mechanisms accelerate coordination.
-
----
-
-## 📊 Transparency Layer
-
-All circles expose:
+All circles expose public data:
 
 - Active quotas  
 - Filled positions  
 - Remaining seats  
-- Payout history  
+- Contribution history  
+- Payout records  
 - Default rates  
 
-Anyone can audit.
+Anyone can audit any circle.
 
 ---
 
-## 📖 Example Circles
-
----
+## Example Circles
 
 ### Devcon Travel Circle
 
@@ -318,8 +300,6 @@ Anyone can audit.
 - Monthly installment: $50  
 - Payout: $20,000  
 - Duration: 24 months  
-
-400 × $50 = $20,000
 
 Supports travel and accommodation.
 
@@ -332,8 +312,6 @@ Supports travel and accommodation.
 - Payout: $500,000  
 - Duration: 84 months  
 
-2,000 × $250 = $500,000
-
 Supports housing acquisition.
 
 ---
@@ -345,68 +323,81 @@ Supports housing acquisition.
 - Payout: $24,000  
 - Duration: 48 months  
 
-300 × $80 = $24,000
-
 Supports training and certification.
 
 ---
 
-## 🎲 Verifiable Randomness
+## Frontend Architecture
 
-Where randomization is required, Mandinga uses Chainlink VRF.
+The frontend is contract-first.
 
-Each draw is:
+It reflects the full lifecycle of each circle by reading directly from
+onchain state:
 
-- Public  
-- Verifiable  
-- Tamper-resistant  
+- Contribution status  
+- Payout schedules  
+- Claim balances  
+- Participation constraints  
+- Settlement conditions  
+
+There is no hidden logic.
+
+The interface mirrors the protocol.
 
 ---
 
-## ⚙️ Tech Stack
+## Tech Stack
 
 - Solidity  
 - Hardhat / Foundry  
 - Arc + USDC  
 - Chainlink VRF  
-- ENS  
+- ENS (EIP-3668)  
 - IPFS  
 
 ---
 
-## 🏆 HackMoney Alignment
+## Repository Structure
 
-- Programmable credit pools  
-- USDC-native settlement  
-- Public registries  
-- Automated enforcement  
+/contracts     Smart contracts
+/test          Unit tests
+/frontend      Web interface
+/scripts       Deployment tools
+
 
 ---
 
-## 🚧 Roadmap
+## Proof of Implementation
 
-- Advanced quota markets  
-- Credit scoring  
+- Smart Contracts: `/contracts`
+- VRF Consumer: `/contracts/RandomnessConsumer.sol`
+- ENS Resolver: `/contracts/OffchainResolver.sol`
+- Tests: `/test`
+- Frontend: `/frontend`
+
+Deployment details available in `/docs/deployments.md`.
+
+---
+
+## Roadmap
+
+- Agentic credit
+- Quota secondary markets  
+- Credit reputation models  
 - Cross-chain circles  
-- Privacy layers  
-- Agent automation  
+- Privacy layers
 - Institutional rails  
 
 ---
 
-## 🌐 Deployments
-
-See repository links.
-
----
-
-## 📜 License
-
-MIT
-
----
-
-## 🌱 Vision
+## Vision
 
 Mandinga is a protocol for predictable, collective access to credit.
-It bridges group coordination and programmable finance.
+
+It encodes how communities already organize financing
+and provides them with durable infrastructure to do it openly,
+reliably, and without interest.
+
+Shared commitment becomes programmable coordination.
+
+![Mandinga cover](/cover.png)
