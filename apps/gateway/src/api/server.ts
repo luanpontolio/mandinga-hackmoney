@@ -14,9 +14,18 @@ app.get("/ccip-read", async ({ query, set }) => {
     return { error: String(error) };
   }
 });
+app.post("/ccip-read", async ({ body, set }) => {
+    try {
+      set.status = 200;
+      return await handleCcipReadRequest(body as CcipReadRequest);
+    } catch (error) {
+      set.status = 400;
+      return { error: String(error) };
+    }
+  });
 
 // Start the server
-const port = process.env.PORT || 3000;
+const port = 3000;
 app.listen(port);
 console.log(`🦊 Elysia server running on port ${port}`);
 export default app;
