@@ -15,15 +15,18 @@ app.get("/ccip-read", async ({ query, set }) => {
   }
 });
 app.post("/ccip-read", async ({ body, set }) => {
-    try {
-      console.debug("[ccip-read] request", { body });
-      set.status = 200;
-      return await handleCcipReadRequest(body as CcipReadRequest);
-    } catch (error) {
-      set.status = 400;
-      return { error: String(error) };
-    }
-  });
+  try {
+    const parsedBody =
+      typeof body === "string" ? (JSON.parse(body) as CcipReadRequest) : (body as CcipReadRequest);
+
+    console.debug("[ccip-read] request", { parsedBody: parsedBody });
+    set.status = 200;
+    return await handleCcipReadRequest(parsedBody);
+  } catch (error) {
+    set.status = 400;
+    return { error: String(error) };
+  }
+});
 
 // Start the server
 const port = 3000;
