@@ -16,7 +16,7 @@ type EnsRecordsState = {
 };
 
 const buildRecordsUrl = () => {
-  const gatewayUrl = "http://localhost:4000/records";
+  const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL;
   if (gatewayUrl) {
     return gatewayUrl.endsWith("/records")
       ? gatewayUrl

@@ -21,9 +21,10 @@ export const env: EnvConfig = {
   chainId: process.env.NEXT_PUBLIC_CHAIN_ID ?? "",
   factoryAddress: process.env.NEXT_PUBLIC_FACTORY_ADDRESS ?? "",
   factoryFromBlock: process.env.NEXT_PUBLIC_FACTORY_FROM_BLOCK ?? "",
-  ensResolverUrl: process.env.NEXT_PUBLIC_ENS_RESOLVER_URL ?? "http://localhost:4000",
+  ensResolverUrl:
+    process.env.NEXT_PUBLIC_ENS_RESOLVER_URL ?? "",
   ensDomain: process.env.NEXT_PUBLIC_ENS_DOMAIN ?? "",
-  gatewayUrl: process.env.NEXT_PUBLIC_GATEWAY_URL ?? "",
+  gatewayUrl: process.env.NEXT_PUBLIC_GATEWAY_URL ?? "http://localhost:4000",
 };
 
 console.log("env", env);
