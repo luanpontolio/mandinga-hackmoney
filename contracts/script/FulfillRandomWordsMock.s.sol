@@ -13,12 +13,19 @@ contract FulfillRandomWordsMockScript is Script {
         uint256 pk = vm.envUint("PRIVATE_KEY");
         address coordinator = vm.envAddress("VRF_COORDINATOR");
         uint256 requestId = vm.envUint("REQUEST_ID");
+<<<<<<< HEAD
+        uint256 word = vm.envOr("RANDOM_WORD", uint256(123));
+
+        uint256[] memory words = new uint256[](1);
+        words[0] = word;
+=======
         // uint256 word = vm.envOr("RANDOM_WORD", uint256(123));
 
         uint256[] memory words = new uint256[](3);
         words[0] = 1;
         words[1] = 2;
         words[2] = 3;
+>>>>>>> origin/main
 
         vm.startBroadcast(pk);
         VRFCoordinatorV2_5Mock(coordinator).fulfillRandomWords(requestId, words);

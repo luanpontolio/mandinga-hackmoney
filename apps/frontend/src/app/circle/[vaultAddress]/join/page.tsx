@@ -1,11 +1,10 @@
 "use client";
 
-import { ArrowLeft, Check } from "lucide-react";
-import Link from "next/link";
-import { CheckoutStep } from "../../../components/CheckoutStep";
-import { PreviewStep } from "../../../components/PreviewStep";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { TermStep } from "../../../components/TermStep";
-import { SuccessStep } from "../../../components/SuccessStep";
+import ReviewAndConfirmStep from "../../../components/ReviewAndConfirmStep";
+import JoinSuccessScreen from "../../../components/JoinSuccessScreen";
 import { useVault, VaultProvider } from "../../../../contexts/VaultContext";
 import { formatUsd } from "../../../../utils";
 import { useJoinFlow } from "../../../../shared/hooks/useJoinFlow";
@@ -17,16 +16,17 @@ function JoinContent({ vaultAddress }: { vaultAddress: string }) {
     error,
     summary,
     signature,
+    step,
     stepStatus,
     stepError,
     isSubmitting,
-    actionLabel,
-    flowMode,
     handleSignSiwe,
     handleCheckout,
   } = useVault();
-  const { currentStep, setCurrentStep } = useJoinFlow(signature, stepStatus);
+  const { currentStep, setCurrentStep } = useJoinFlow(signature);
   const joinSummary = useJoinSummary(summary);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const router = useRouter();
 
   if (loading) {
     return (
@@ -55,61 +55,96 @@ function JoinContent({ vaultAddress }: { vaultAddress: string }) {
   const feeLabel = joinSummary.feeLabel;
   const protocolFee = joinSummary.protocolFee;
   const totalWithFees = joinSummary.totalWithFees;
-  const circleLabel = joinSummary.circleLabel;
-
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <header className="w-full border-b border-[#F0F0F0]">
-        <div className="mx-auto max-w-[1280px] w-full px-6 md:px-10 py-6 flex items-center justify-between">
-          <Link
-            href={`/circle/${vaultAddress}`}
-            className="inline-flex items-center gap-2 text-[#1A1A1A] font-medium transition-opacity hover:opacity-70"
-          >
-            <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
-            <span className="text-sm md:text-base whitespace-nowrap">Back</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-2 text-sm text-[#666666]">
-            <span>Step</span>
-            <span className="font-semibold text-[#1A1A1A]">
-              {currentStep}/4
-            </span>
+      <header className="w-full border-b border-[#F0F0F0] surfaceTopbar">
+        <div className="mx-auto max-w-[1280px] w-full px-6 md:px-10 py-6">
+          {/* Mobile: stacked */}
+          <div className="flex flex-col lg:hidden gap-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-[#666666]">{currentStep}/2</div>
+              <button
+                onClick={() => setShowCancelModal(true)}
+                className="text-sm text-[#1A1A1A] border border-[#E0E0E0] rounded px-3 py-1"
+              >
+                Cancel
+              </button>
+            </div>
+            <h1 className="text-xl font-semibold text-[#1A1A1A] text-center">Join Circle</h1>
           </div>
-          <div className="hidden md:flex items-center gap-2 text-[#1A1A1A]">
-            <span className="text-sm font-medium">Join circle</span>
-            <Check className="h-4 w-4" />
+
+          {/* Desktop: title left, stepper center, cancel right */}
+          <div className="hidden lg:flex items-center justify-between relative">
+            <div className="text-lg font-semibold text-[#1A1A1A]">Join Circle</div>
+            <div className="absolute left-1/2 -translate-x-1/2">
+              <div className="flex items-center gap-3">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep >= 1 ? "bg-[#1A1A1A] text-white" : "border border-[#E0E0E0] text-[#BDBDBD] bg-white"}`}>1</div>
+                <div className={`w-24 h-px ${currentStep > 1 ? "bg-[#1A1A1A]" : "bg-[#E0E0E0]"}`} />
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 2 ? "bg-[#1A1A1A] text-white" : "border border-[#E0E0E0] text-[#BDBDBD] bg-white"}`}>2</div>
+              </div>
+            </div>
+            <div>
+              <button
+                onClick={() => setShowCancelModal(true)}
+                className="text-sm text-[#1A1A1A] border border-[#E0E0E0] rounded px-3 py-1"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col justify-center mx-auto max-w-[720px] w-full px-6 md:px-10 pb-12 pt-6 box-border gap-6">
-        {currentStep === 1 && <TermStep onSign={handleSignSiwe} />}
-        {currentStep === 2 && (
-          <PreviewStep
-            monthlyAmount={formatUsd(summary.installmentAmount)}
-            totalMonths={Number(summary.totalInstallments)}
-            totalCommitment={formatUsd(totalCommitment)}
-            protocolFee={formatUsd(protocolFee)}
-            totalWithFees={formatUsd(totalWithFees)}
-            feeLabel={feeLabel}
-            onContinue={() => setCurrentStep(3)}
-          />
-        )}
-        {currentStep === 3 && (
-          <CheckoutStep
-            circleLabel={circleLabel}
-            monthlyAmount={formatUsd(summary.installmentAmount)}
-            totalMonths={Number(summary.totalInstallments)}
-            totalWithFees={formatUsd(totalWithFees)}
-            actionLabel={actionLabel}
-            isSubmitting={isSubmitting}
-            stepError={stepError}
-            onConfirm={handleCheckout}
-          />
-        )}
-        {currentStep === 4 && (
-          <SuccessStep circleAddress={vaultAddress} flowMode={flowMode} />
+      <main className="flex-1 flex flex-col items-center mx-auto max-w-[1280px] w-full px-6 md:px-10 pb-12 pt-6 box-border gap-6">
+        {/* If transaction finished successfully show success screen */}
+        {step === "result" && stepStatus === "success" ? (
+          <JoinSuccessScreen circleSlug={summary.vaultAddress} />
+        ) : (
+          <>
+            {currentStep === 1 && (
+              <TermStep
+                monthlyAmount={formatUsd(summary.installmentAmount)}
+                totalMonths={Number(summary.totalInstallments)}
+                totalRounds={Number(summary.numberOfRounds)}
+                startDate={summary.startTime}
+                endDate={summary.closeWindowLate}
+                onSign={async () => {
+                  const ok = await handleSignSiwe();
+                  if (ok) setCurrentStep(2);
+                }}
+              />
+            )}
+            {currentStep === 2 && (
+              <ReviewAndConfirmStep
+                monthlyAmount={formatUsd(summary.installmentAmount)}
+                totalMonths={Number(summary.totalInstallments)}
+                totalCommitment={formatUsd(totalCommitment)}
+                protocolFee={formatUsd(protocolFee)}
+                totalWithFees={formatUsd(totalWithFees)}
+                feeLabel={feeLabel}
+                onConfirm={handleCheckout}
+                isSubmitting={isSubmitting}
+                stepError={stepError}
+                agreementSignedAt={signature ? new Date() : null}
+              />
+            )}
+          </>
         )}
       </main>
+
+      {/* Cancel confirmation modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <h2 className="text-xl font-semibold text-[#1A1A1A] mb-2">Cancel joining?</h2>
+            <p className="text-sm text-[#666666] mb-6">Your progress will be lost and you'll need to start over if you want to join this circle later.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowCancelModal(false)} className="flex-1 border border-[#E0E0E0] rounded px-4 py-2">Continue Joining</button>
+              <button onClick={() => router.push(`/circle/${vaultAddress}`)} className="flex-1 bg-[#1A1A1A] text-white rounded px-4 py-2">Yes, Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

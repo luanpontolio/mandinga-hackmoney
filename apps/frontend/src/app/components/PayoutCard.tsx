@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Rings } from "../../shared/Rings";
 import { PADDING_L, TYPOGRAPHY } from "./designTokens";
 
@@ -10,6 +11,7 @@ type PayoutCardProps = {
   hasJoined: boolean;
   currentRound: number;
   totalRounds: number;
+  totalMembers?: number;
   windowDates?: {
     startDate: Date | null;
     closeWindowEarly: Date | null;
@@ -32,6 +34,7 @@ export function PayoutCard({
   hasJoined,
   currentRound,
   totalRounds,
+  totalMembers,
   windowDates,
   selectedEntry,
   hoveredEntry,
@@ -107,10 +110,20 @@ export function PayoutCard({
       windowDates?.closeWindowMiddle
     );
 
+    const perWindow = Math.floor(safeTotalRounds / 3);
+    const rem = safeTotalRounds - perWindow * 3;
+    // distribute remainder to the last window
+    const ranges = {
+      early: { start: 1, end: perWindow },
+      middle: { start: perWindow + 1, end: perWindow * 2 },
+      late: { start: perWindow * 2 + 1, end: perWindow * 3 + rem },
+    };
+
     if (activeEntry === "early") {
+      const r = ranges.early;
       return {
-        counter: "01/08",
-        nextRound: "Round 1",
+        counter: `${String(r.start).padStart(2, "0")}/${String(r.end).padStart(2, "0")}`,
+        nextRound: `Round ${r.start}`,
         nextRoundLabel: "Next round - Early",
         nextRoundDate: earlyParts.dateLabel,
         nextRoundYear: earlyParts.yearLabel,
@@ -118,9 +131,10 @@ export function PayoutCard({
       };
     }
     if (activeEntry === "middle") {
+      const r = ranges.middle;
       return {
-        counter: "09/16",
-        nextRound: "Round 9",
+        counter: `${String(r.start).padStart(2, "0")}/${String(r.end).padStart(2, "0")}`,
+        nextRound: `Round ${r.start}`,
         nextRoundLabel: "Next round - Middle",
         nextRoundDate: middleParts.dateLabel,
         nextRoundYear: middleParts.yearLabel,
@@ -128,9 +142,10 @@ export function PayoutCard({
       };
     }
     if (activeEntry === "late") {
+      const r = ranges.late;
       return {
-        counter: "17/24",
-        nextRound: "Round 17",
+        counter: `${String(r.start).padStart(2, "0")}/${String(r.end).padStart(2, "0")}`,
+        nextRound: `Round ${r.start}`,
         nextRoundLabel: "Next round - Late",
         nextRoundDate: lateParts.dateLabel,
         nextRoundYear: lateParts.yearLabel,
@@ -142,6 +157,27 @@ export function PayoutCard({
 
   const simulationData = activeEntry ? getSimulationData() : null;
 
+  // display denominator: default to `totalRounds`, but allow hovering to reveal `totalMembers` when present
+  const headerNumerator = isPreJoin ? 0 : safeCurrentRound;
+
+  const [hoverDenom, setHoverDenom] = useState(false);
+  const hasMembersDenom = typeof totalMembers === "number" && totalMembers > 0;
+  const denomDuringHover = hoverDenom && hasMembersDenom ? totalMembers! : safeTotalRounds;
+  const headerCounter = `${String(headerNumerator).padStart(2, "0")}/${String(
+    denomDuringHover
+  ).padStart(2, "0")}`;
+
+  const computeRoundDate = (roundIndex: number) => {
+    if (!windowDates) return { dateLabel: "--", yearLabel: "" };
+    const { startDate, closeWindowLate } = windowDates;
+    if (!isValidDate(startDate) || !isValidDate(closeWindowLate) || safeTotalRounds <= 0) {
+      return { dateLabel: "--", yearLabel: "" };
+    }
+    const totalMs = closeWindowLate.getTime() - startDate.getTime();
+    const roundMs = totalMs / safeTotalRounds;
+    const roundStart = new Date(startDate.getTime() + (roundIndex - 1) * roundMs);
+    return formatDateParts(roundStart, closeWindowLate);
+  };
   if (isPreJoin) {
     return (
       <div
@@ -149,8 +185,13 @@ export function PayoutCard({
       >
         <div className="flex items-center justify-between">
           <span className={TYPOGRAPHY.label}>Payouts</span>
-          <span className={TYPOGRAPHY.caption}>
-            {simulationData ? simulationData.counter : "00/24"}
+          <span
+            className={TYPOGRAPHY.caption}
+            onMouseEnter={() => setHoverDenom(true)}
+            onMouseLeave={() => setHoverDenom(false)}
+            title={hoverDenom ? "Denominator: total rounds" : "Denominator: total members"}
+          >
+            {headerCounter}
           </span>
         </div>
 
@@ -187,9 +228,6 @@ export function PayoutCard({
             <span className="font-semibold text-[#1A1A1A] whitespace-nowrap">
               {simulationData?.nextRoundDate || "March 1"}
             </span>
-            <span className={TYPOGRAPHY.label}>
-              {simulationData?.nextRoundYear || "2026"}
-            </span>
           </div>
         </div>
 
@@ -201,6 +239,7 @@ export function PayoutCard({
             onHoverEntry={onHoverEntry}
             onSelectEntry={onSelectEntry}
             canSelect={isWalletConnected}
+            showCounts={false}
             highlightFirst={!activeEntry}
           />
         </div>
@@ -214,8 +253,13 @@ export function PayoutCard({
     >
       <div className="flex items-center justify-between">
         <span className={TYPOGRAPHY.label}>Payouts</span>
-        <span className={TYPOGRAPHY.caption}>
-          {String(safeCurrentRound).padStart(2, "0")}/{safeTotalRounds}
+        <span
+          className={TYPOGRAPHY.caption}
+          onMouseEnter={() => setHoverDenom(true)}
+          onMouseLeave={() => setHoverDenom(false)}
+          title={hoverDenom ? "Denominator: total rounds" : "Denominator: total members"}
+        >
+          {headerCounter}
         </span>
       </div>
 
@@ -228,12 +272,21 @@ export function PayoutCard({
 
       <div className="flex items-start justify-between gap-1">
         <div className="flex flex-col gap-1">
-          <span className="font-semibold text-[#1A1A1A]">Round 1</span>
+          <span className="font-semibold text-[#1A1A1A]">{`Round ${Math.min(safeCurrentRound + 1, safeTotalRounds)}`}</span>
           <span className={TYPOGRAPHY.label}>Next round</span>
         </div>
         <div className="flex flex-col gap-1 items-end">
-          <span className="font-semibold text-[#1A1A1A]">March 1</span>
-          <span className={TYPOGRAPHY.label}>2026</span>
+          {
+            (() => {
+              const nextIndex = Math.min(safeCurrentRound + 1, safeTotalRounds);
+              const parts = computeRoundDate(nextIndex);
+              return (
+                <>
+                  <span className="font-semibold text-[#1A1A1A]">{parts.dateLabel}</span>
+                </>
+              );
+            })()
+          }
         </div>
       </div>
 
@@ -245,6 +298,7 @@ export function PayoutCard({
           onHoverEntry={onHoverEntry}
           onSelectEntry={onSelectEntry}
           canSelect={isWalletConnected}
+          showCounts={false}
           highlightFirst={!activeEntry}
         />
       </div>

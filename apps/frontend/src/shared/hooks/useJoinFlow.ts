@@ -1,26 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2;
 
-export function useJoinFlow(
-  signature: string | null,
-  stepStatus: "success" | "error" | null
-) {
+export function useJoinFlow(_signature: string | null) {
   const [currentStep, setCurrentStep] = useState<Step>(1);
 
-  useEffect(() => {
-    if (signature && currentStep === 1) {
-      setCurrentStep(2);
-    }
-  }, [signature, currentStep]);
-
-  useEffect(() => {
-    if (stepStatus === "success") {
-      setCurrentStep(4);
-    }
-  }, [stepStatus]);
+  // NOTE: do not auto-advance based on a stored signature. The join flow
+  // should always present the Terms step first; callers should advance the
+  // local step after an explicit sign action.
 
   return { currentStep, setCurrentStep };
 }

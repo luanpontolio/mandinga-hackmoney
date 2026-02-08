@@ -9,6 +9,7 @@ type EnsCardProps = {
 
 export function EnsCard({ ensName, ensUrl }: EnsCardProps) {
   const linkUrl = ensUrl ?? "#";
+  const displayEns = ensName && ensName.trim() ? ensName : "--.mandinga.eth";
 
   return (
     <div
@@ -48,7 +49,7 @@ export function EnsCard({ ensName, ensUrl }: EnsCardProps) {
 
       <div className="rounded-full bg-[#E3F2FD] px-4 py-2 text-center">
         <span className={`${TYPOGRAPHY.button} text-[#1976D2]`}>
-          {ensName}
+          {displayEns}
         </span>
       </div>
     </div>

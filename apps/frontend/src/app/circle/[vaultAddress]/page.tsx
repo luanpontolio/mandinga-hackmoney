@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useUser } from "../../../contexts/UserContext";
 import { useVault, VaultProvider } from "../../../contexts/VaultContext";
 import { formatAddress, formatUsd } from "../../../utils";
+import { formatAdaptiveDate, formatPayoutWindow } from "../../../lib/formatDate";
 import { ArcCard } from "../../components/ArcCard";
 import { EnsCard } from "../../components/EnsCard";
 import { EntryStatusCard } from "../../components/EntryStatusCard";
@@ -19,37 +20,6 @@ import { useCircleEntrySelection } from "../../../shared/hooks/useCircleEntrySel
 import { useCurrentQuotaId } from "../../../shared/hooks/useCurrentQuotaId";
 import { useRedeemFlow } from "../../../shared/hooks/useRedeemFlow";
 import { useEnsRecords } from "../../../shared/hooks/useEnsRecords";
-import { getAddress } from "viem";
-
-const formatDate = (date: Date | null) => {
-  if (!date || Number.isNaN(date.getTime())) return "--";
-  return date.toLocaleDateString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-};
-
-const formatWindowRange = (start: Date | null, end: Date | null) => {
-  if (!start || !end) return "--";
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "--";
-  const startLabel = start.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const endLabel = end.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return `${startLabel} - ${endLabel}`;
-};
 
 const getStatusLabel = (startDate: Date | null, endDate: Date | null) => {
   if (!startDate || !endDate) return "--";
@@ -130,8 +100,8 @@ function CircleDetailContent() {
     return {
       amountLabel: formatUsd(summary.targetValue),
       title: summary.circleName || "--",
-      startDateLabel: formatDate(startDate),
-      endDateLabel: formatDate(endDate),
+      startDateLabel: formatAdaptiveDate(startDate),
+      endDateLabel: formatAdaptiveDate(endDate),
       statusLabel: getStatusLabel(startDate, endDate),
       slotsLeftLabel: `${slotsLeft} slots left`,
       arcscanUrl: summary.vaultAddress
@@ -146,9 +116,9 @@ function CircleDetailContent() {
         late: Math.max(0, Number(summary.quotaCapLate)),
       },
       entryDescriptions: {
-        early: formatWindowRange(startDate, closeWindowEarly),
-        middle: formatWindowRange(closeWindowEarly, closeWindowMiddle),
-        late: formatWindowRange(closeWindowMiddle, endDate),
+        early: formatPayoutWindow(startDate, startDate, closeWindowEarly),
+        middle: formatPayoutWindow(startDate, closeWindowEarly, closeWindowMiddle),
+        late: formatPayoutWindow(startDate, closeWindowMiddle, endDate),
       },
       windowDates: {
         startDate,
@@ -159,6 +129,21 @@ function CircleDetailContent() {
     };
   }, [summary]);
 
+  const computedCurrentRound = useMemo(() => {
+    try {
+      if (!windowDates || !totalRounds) return 1;
+      const { startDate, closeWindowLate } = windowDates;
+      if (!startDate || !closeWindowLate) return 1;
+      const now = Date.now();
+      const totalMs = closeWindowLate.getTime() - startDate.getTime();
+      if (totalMs <= 0 || totalRounds <= 0) return 1;
+      const roundMs = totalMs / totalRounds;
+      const idx = Math.floor((now - startDate.getTime()) / roundMs) + 1;
+      return Math.min(Math.max(1, idx), totalRounds);
+    } catch {
+      return 1;
+    }
+  }, [windowDates, totalRounds]);
   const fallbackQuotaId = useCurrentQuotaId(windowDates);
   const currentQuotaId =
     hasJoined && positionQuotaId !== null ? positionQuotaId : fallbackQuotaId;
@@ -182,11 +167,13 @@ function CircleDetailContent() {
     walletAddress: fullAddress ?? null,
   });
   const { getEnsNameForVault } = useEnsRecords();
-  const ensName = summary?.vaultAddress
-    ? getEnsNameForVault(summary.vaultAddress) ?? "--"
-    : "--";
-  const ensUrl =
-    ensName !== "--" ? `https://app.ens.domains/name/${ensName}` : null;
+  const resolvedEnsName = summary?.vaultAddress
+    ? getEnsNameForVault(summary.vaultAddress)
+    : null;
+  const ensName = resolvedEnsName ?? summary?.circleName ?? title;
+  const ensUrl = resolvedEnsName
+    ? `https://app.ens.domains/name/${resolvedEnsName}`
+    : null;
   const currentInstallment = hasJoined ? Number(paidInstallments) : 0;
   const hasRemainingInstallments =
     hasJoined &&
@@ -216,7 +203,6 @@ function CircleDetailContent() {
       </div>
     );
   }
-
   const joinHref = `/circle/${summary.vaultAddress}/join`;
 
   return (
@@ -250,13 +236,18 @@ function CircleDetailContent() {
             entryCounts={entryCounts}
             entryDescriptions={entryDescriptions}
           />
-          <TimelineCard startDate={startDateLabel} endDate={endDateLabel} />
+          <TimelineCard
+            startDate={startDateLabel}
+            endDate={endDateLabel}
+            baseStatus={baseStatusLabel}
+          />
           <PayoutCard
             isWalletConnected={isConnected}
-            hasJoined={false}
-            currentRound={0}
-            totalRounds={0}
+            hasJoined={hasJoined}
+            currentRound={computedCurrentRound}
+            totalRounds={totalRounds}
             windowDates={windowDates}
+            totalMembers={Number(summary.numUsers)}
             selectedEntry={selectedEntry}
             hoveredEntry={hoveredEntry}
             onSelectEntry={setSelectedEntry}
@@ -275,7 +266,7 @@ function CircleDetailContent() {
               onRedeem={handleRedeem}
             />
           )}
-          <EnsCard ensName={ensName} ensUrl={ensUrl} />
+          <EnsCard ensName={ensName ?? "--"} ensUrl={ensUrl} />
           <MembersCard members={members} />
         </div>
 
@@ -326,18 +317,23 @@ function CircleDetailContent() {
             />
           </div>
           <div style={{ gridArea: "timeline" }}>
-            <TimelineCard startDate={startDateLabel} endDate={endDateLabel} />
+            <TimelineCard
+              startDate={startDateLabel}
+              endDate={endDateLabel}
+              baseStatus={baseStatusLabel}
+            />
           </div>
           <div style={{ gridArea: "ens" }}>
-            <EnsCard ensName={ensName} ensUrl={ensUrl} />
+            <EnsCard ensName={ensName ?? "--"} ensUrl={ensUrl} />
           </div>
           <div style={{ gridArea: "payout" }} className="flex flex-col gap-4">
             <PayoutCard
               isWalletConnected={isConnected}
-              hasJoined={false}
-              currentRound={0}
-              totalRounds={0}
+              hasJoined={hasJoined}
+              currentRound={computedCurrentRound}
+              totalRounds={totalRounds}
               windowDates={windowDates}
+              totalMembers={Number(summary.numUsers)}
               selectedEntry={selectedEntry}
               hoveredEntry={hoveredEntry}
               onSelectEntry={setSelectedEntry}
@@ -375,13 +371,18 @@ function CircleDetailContent() {
           }}
         >
           <div className={`flex flex-col ${GRID_GAP}`}>
-            <TimelineCard startDate={startDateLabel} endDate={endDateLabel} />
+            <TimelineCard
+              startDate={startDateLabel}
+              endDate={endDateLabel}
+              baseStatus={baseStatusLabel}
+            />
             <PayoutCard
               isWalletConnected={isConnected}
-              hasJoined={false}
-              currentRound={0}
-              totalRounds={0}
+              hasJoined={hasJoined}
+              currentRound={computedCurrentRound}
+              totalRounds={totalRounds}
               windowDates={windowDates}
+              totalMembers={Number(summary.numUsers)}
               selectedEntry={selectedEntry}
               hoveredEntry={hoveredEntry}
               onSelectEntry={setSelectedEntry}
@@ -429,7 +430,7 @@ function CircleDetailContent() {
           <div className={`flex flex-col ${GRID_GAP}`}>
             <SlotsCard statusLabel={statusLabel} slotsLeftLabel={slotsLeftLabel} />
             <MembersCard members={members} />
-            <EnsCard ensName={ensName} ensUrl={ensUrl} />
+            <EnsCard ensName={ensName ?? "--"} ensUrl={ensUrl} />
             <ArcCard arcscanUrl={arcscanUrl} />
           </div>
         </div>

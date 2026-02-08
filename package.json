@@ -17,5 +17,11 @@
     "dev:gateway": "bun --filter './apps/gateway' run dev",
     "test:contracts": "cd contracts && forge test",
     "test:contracts:coverage": "cd contracts && forge coverage --ir-minimum"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "autoprefixer": "^10.4.24",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18"
   }
 }

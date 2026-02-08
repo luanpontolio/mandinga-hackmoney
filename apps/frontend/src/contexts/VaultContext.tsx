@@ -54,7 +54,7 @@ type VaultContextValue = {
   reload: () => Promise<void>;
   resetStepper: () => void;
   handleStartFlow: () => void;
-  handleSignSiwe: () => Promise<void>;
+  handleSignSiwe: () => Promise<boolean>;
   handleCheckout: () => Promise<void>;
 };
 
@@ -225,12 +225,12 @@ export function VaultProvider({
     setIsSubmitting(false);
   }, []);
 
-  const handleSignSiwe = useCallback(async () => {
-    if (flowMode === "pay") return;
-    if (!fullAddress) return;
+  const handleSignSiwe = useCallback(async (): Promise<boolean> => {
+    if (flowMode === "pay") return false;
+    if (!fullAddress) return false;
     if (!window.ethereum) {
       setStepError("No wallet provider found.");
-      return;
+      return false;
     }
     setIsSubmitting(true);
     setStepError(null);
@@ -242,8 +242,28 @@ export function VaultProvider({
         uri: window.location.origin,
         nonce: generateSiweNonce(),
         version: "1",
-        statement:
-          "I agree to the Mandinga protocol terms. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        statement: `If you accept, you agree that:
+
+      01.
+      Fixed Monthly Installment
+      You agree to pay $892 every month for 24 months. Early exit is not guaranteed.
+
+      02.
+      Missed Payments
+      Penalties may apply. Rules are enforced automatically.
+
+      03.
+      Shared Financial Risk
+      This is a collective system. Other members may affect outcomes.
+
+      04.
+      Legal Responsibility
+      You are responsible for handling legal and tax obligations in your country.
+
+      05.
+      Blockchain Finality
+      Transactions are irreversible once confirmed.
+      `,
       });
       const walletClient = createWalletClient({
         chain: arcTestnet,
@@ -263,10 +283,12 @@ export function VaultProvider({
         // Ignore localStorage write failures (e.g. privacy mode).
       }
       setStep("checkout");
+      return true;
     } catch (err) {
       setStepError(
         err instanceof Error ? err.message : "Failed to sign the message."
       );
+      return false;
     } finally {
       setIsSubmitting(false);
     }
@@ -328,6 +350,7 @@ export function VaultProvider({
     normalizedVaultAddress,
     quota,
     client,
+    showToast,
   ]);
 
   const handleStartFlow = useCallback(() => {

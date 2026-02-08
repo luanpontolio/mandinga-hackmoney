@@ -8,7 +8,6 @@ import {
   erc20Abi,
   getAddress,
   http,
-  toCoinType,
   type Address,
 } from "viem";
 import { arcTestnet } from "../../lib/config";
